@@ -1,0 +1,89 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model Creator {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  fid       String?
+  name      String
+  userName  String    @unique
+  avatar    String?
+  cover     String?
+  bio       String?
+  chapers   Chapter[]
+  contents  Content[]
+  email     String    @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Category {
+  id         String    @id @default(auto()) @map("_id") @db.ObjectId
+  title      String
+  slug       String    @unique
+  contentIds String[]  @db.ObjectId
+  contents   Content[] @relation(fields: [contentIds], references: [id])
+}
+
+model Country {
+  id         String    @id @default(auto()) @map("_id") @db.ObjectId
+  code       String    @unique
+  name       String
+  contentIds String[]  @db.ObjectId
+  contents   Content[] @relation(fields: [contentIds], references: [id])
+}
+
+model Chapter {
+  id         String      @id @default(auto()) @map("_id") @db.ObjectId
+  fid        String?
+  title      String?
+  mobileOnly Boolean
+  type       ContentType
+  contentId  String      @db.ObjectId
+  content    Content     @relation(fields: [contentId], references: [id])
+  creatorId  String      @db.ObjectId
+  creator    Creator     @relation(fields: [creatorId], references: [id])
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+}
+
+enum ContentType {
+  movie
+  comic
+  novel
+}
+
+enum ContentStatus {
+  complete
+  updating
+}
+
+model Content {
+  id          String        @id @default(auto()) @map("_id") @db.ObjectId
+  fid         String?
+  title       String
+  akaTitle    String[]
+  type        ContentType
+  author      String?
+  thumbUrl    String?
+  description String?
+  chapter     Chapter[]
+  totalChap   Int?          @default(0)
+  status      ContentStatus @default(updating)
+  categoryIds String[]      @db.ObjectId
+  categories  Category[]    @relation(fields: [categoryIds], references: [id])
+  countryIds  String[]      @db.ObjectId
+  countries   Country[]     @relation(fields: [countryIds], references: [id])
+  creatorId   String        @db.ObjectId
+  creator     Creator       @relation(fields: [creatorId], references: [id])
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
