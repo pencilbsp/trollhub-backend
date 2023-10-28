@@ -41,18 +41,26 @@ model Country {
   contents   Content[] @relation(fields: [contentIds], references: [id])
 }
 
+enum ChapterStatus {
+  ready
+  error
+  pending
+}
+
 model Chapter {
-  id         String      @id @default(auto()) @map("_id") @db.ObjectId
+  id         String        @id @default(auto()) @map("_id") @db.ObjectId
   fid        String?
   title      String?
+  images     String[]
   mobileOnly Boolean
   type       ContentType
-  contentId  String      @db.ObjectId
-  content    Content     @relation(fields: [contentId], references: [id])
-  creatorId  String      @db.ObjectId
-  creator    Creator     @relation(fields: [creatorId], references: [id])
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
+  status     ChapterStatus @default(pending)
+  contentId  String        @db.ObjectId
+  content    Content       @relation(fields: [contentId], references: [id])
+  creatorId  String        @db.ObjectId
+  creator    Creator       @relation(fields: [creatorId], references: [id])
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
 }
 
 enum ContentType {

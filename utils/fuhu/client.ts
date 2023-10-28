@@ -1,10 +1,11 @@
 import CryptoJS from "crypto-js";
 
-export const decrypt = function (
-  str: string,
-  keyString: string,
-  ivString: string
-) {
+const MOBILE_USER_AGENT =
+  "Mozilla/5.0 (Linux; Android 13; SM-S911U) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Mobile Safari/537.36";
+
+const mobileHeaders = new Headers({ "User-Agent": MOBILE_USER_AGENT });
+
+export const decrypt = function (str: string, keyString: string, ivString: string) {
   const iv = CryptoJS.enc.Utf8.parse(ivString);
   const key = keyString.length < 32 ? keyString.padEnd(32, "\0") : keyString;
   return CryptoJS.AES.decrypt(str, CryptoJS.enc.Utf8.parse(key), {
@@ -12,11 +13,7 @@ export const decrypt = function (
   }).toString(CryptoJS.enc.Utf8);
 };
 
-export const encrypt = function (
-  str: string,
-  keyString: string,
-  ivString: string
-) {
+export const encrypt = function (str: string, keyString: string, ivString: string) {
   const iv = CryptoJS.enc.Utf8.parse(ivString);
   const key = keyString.length < 32 ? keyString.padEnd(32, "\0") : keyString;
   return CryptoJS.AES.encrypt(str, CryptoJS.enc.Utf8.parse(key), {
@@ -46,27 +43,19 @@ export function imageDecrypt(imgs: any) {
 }
 
 export function createComicURL(id: string, version = "0.0.8") {
-  const payload = `${id}|${Date.now()}|${
-    Date.now() - 62953
-  }|idoitmyself.xyz|0.0.0|${version}`;
-  return `https://idoitmyself.xyz/embed/${encrypt(
-    payload,
-    "--KpQG3w0km3imY",
-    "b63e541bc9ece19a"
-  )
+  const payload = `${id}|${Date.now()}|${Date.now() - 62953}|idoitmyself.xyz|0.0.0|${version}`;
+  return `https://idoitmyself.xyz/embed/${encrypt(payload, "--KpQG3w0km3imY", "b63e541bc9ece19a")
     .replaceAll("/", "_")
     .replaceAll("+", "-")
     .replaceAll("=", "")}`;
 }
 
 export async function comicParser(comicUrl: string) {
-  let response = await fetch(comicUrl);
+  let response = await fetch(comicUrl, { headers: mobileHeaders });
   let body = await response.text();
   body = body.replace(/\s\s+/g, " ");
 
-  const dataString = /new\sComicViewer\((?<data>.*)\);\scomic\.run\(\)/.exec(
-    body
-  )?.groups?.data;
+  const dataString = /new\sComicViewer\((?<data>.*)\);\scomic\.run\(\)/.exec(body)?.groups?.data;
   if (!dataString) throw new Error("Không thể lấy dữ liệu.");
 
   const data = JSON.parse(
@@ -84,10 +73,11 @@ export async function comicParser(comicUrl: string) {
     v: data.version,
   });
 
-  const restApi =
-    new URL(comicUrl).origin + "/content/rest?" + params.toString();
-  response = await fetch(restApi);
+  const restApi = new URL(comicUrl).origin + "/content/rest?" + params.toString();
+  response = await fetch(restApi, { headers: mobileHeaders });
   const comic = await response.json();
+  if (comic.error) throw new Error(comic.error_msg);
+
   const { webp } = comic.data["sv1"];
   return imageDecrypt(webp);
 }
