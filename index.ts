@@ -46,7 +46,7 @@ setInterval(async () => {
 
     const chapter = await prisma.chapter.findFirst({
       where: {
-        mobileOnly: true,
+        mobileOnly: false,
         type: ContentType.comic,
         images: {
           isEmpty: true,
@@ -54,6 +54,9 @@ setInterval(async () => {
         status: {
           notIn: [ChapterStatus.error, ChapterStatus.ready],
         },
+      },
+      orderBy: {
+        updatedAt: "asc",
       },
     });
 
