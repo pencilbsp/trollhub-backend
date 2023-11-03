@@ -1,3 +1,4 @@
+import slug from "slug";
 import jsdom from "jsdom";
 import { ContentStatus, ContentType } from "@prisma/client";
 
@@ -89,6 +90,8 @@ async function insertContent(url: string, type: ContentType, status: ContentStat
     const creator = await extractFuhuCreator(content.creator.url!, headers);
     const country = getCountryCode(content.country);
 
+    const keywords = slug(content.title!, { replacement: " " });
+
     if (newContent) {
       console.log(" [+] Đang cập nhật nội dung:", content.title);
       await prisma.content.update({
@@ -97,6 +100,7 @@ async function insertContent(url: string, type: ContentType, status: ContentStat
         },
         data: {
           status,
+          keywords,
         },
       });
 
@@ -120,6 +124,7 @@ async function insertContent(url: string, type: ContentType, status: ContentStat
         data: {
           fid: content.mid,
           type: content.type,
+          keywords: keywords,
           title: content.title!,
           author: content.author,
           thumbUrl: content.poster,
