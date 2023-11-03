@@ -41,10 +41,10 @@ function decodeEmail(href: string) {
   }
 }
 
-export const extractFuhuCreator = async (url: string) => {
+export const extractFuhuCreator = async (url: string, headers?: Headers) => {
   if (!url.startsWith("http")) url = BASE_FUHU_URL + url;
 
-  const response = await fetch(url);
+  const response = await fetch(url, { headers });
   const bodyString = await response.text();
   const dom = new JSDOM(bodyString);
 
@@ -65,9 +65,9 @@ export const extractFuhuCreator = async (url: string) => {
   return { bio: bio?.trim(), cname, email, cover, avatar };
 };
 
-export const extractFuhuContent = async (url: string, type: ContentType) => {
+export const extractFuhuContent = async (url: string, type: ContentType, headers?: Headers) => {
   const mid = url.split("_")[1].split(".")[0];
-  let response = await fetch(url);
+  let response = await fetch(url, { headers });
 
   const bodyString = await response.text();
   const dom = new JSDOM(bodyString);
@@ -87,10 +87,12 @@ export const extractFuhuContent = async (url: string, type: ContentType) => {
   const chapterLengthElm = findByTextContent(infoElm.querySelector(".item-meta"), ["Số chương", "Số tập"]);
   const countryElm = findByTextContent(infoElm.querySelector(".item-meta"), ["Nước sản xuất"]);
   const releaseDateElm = findByTextContent(infoElm.querySelector(".item-meta"), ["Ngày phát hành"]);
+  const chapterDurationElm = findByTextContent(infoElm.querySelector(".item-meta"), ["Độ dài tập phim"]);
 
   const author = authorElm?.children[1].textContent?.trim();
   const country = countryElm?.children[1].textContent?.trim();
 
+  const chapterDuration = chapterDurationElm?.children[1].textContent?.trim();
   const totalChap = Number(chapterLengthElm?.children[1].textContent?.trim() || 0);
 
   let releaseDate = new Date();
@@ -119,7 +121,10 @@ export const extractFuhuContent = async (url: string, type: ContentType) => {
         mid: mid,
         type: "all_json",
         host: new URL(BASE_FUHU_URL).hostname,
-      })
+      }),
+    {
+      headers,
+    }
   );
 
   const subitems = await response.json();
@@ -145,5 +150,6 @@ export const extractFuhuContent = async (url: string, type: ContentType) => {
     categories,
     description,
     releaseDate,
+    chapterDuration,
   };
 };

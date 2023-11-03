@@ -75,23 +75,25 @@ enum ContentStatus {
 }
 
 model Content {
-  id          String        @id @default(auto()) @map("_id") @db.ObjectId
-  fid         String?
-  title       String
-  akaTitle    String[]
-  type        ContentType
-  author      String?
-  thumbUrl    String?
-  description String?
-  chapter     Chapter[]
-  totalChap   Int?          @default(0)
-  status      ContentStatus @default(updating)
-  categoryIds String[]      @db.ObjectId
-  categories  Category[]    @relation(fields: [categoryIds], references: [id])
-  countryIds  String[]      @db.ObjectId
-  countries   Country[]     @relation(fields: [countryIds], references: [id])
-  creatorId   String        @db.ObjectId
-  creator     Creator       @relation(fields: [creatorId], references: [id])
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  fid             String?
+  keywords        String?
+  title           String
+  akaTitle        String[]
+  type            ContentType
+  author          String?
+  thumbUrl        String?
+  description     String?
+  chapter         Chapter[]
+  chapterDuration String?
+  totalChap       Int?          @default(0)
+  status          ContentStatus @default(updating)
+  categoryIds     String[]      @db.ObjectId
+  categories      Category[]    @relation(fields: [categoryIds], references: [id])
+  countryIds      String[]      @db.ObjectId
+  countries       Country[]     @relation(fields: [countryIds], references: [id])
+  creatorId       String        @db.ObjectId
+  creator         Creator       @relation(fields: [creatorId], references: [id])
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 }

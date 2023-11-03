@@ -7,8 +7,13 @@ import downloadWithFetch from "./utils/download-file";
 import { comicParser, createComicURL } from "./utils/fuhu/client";
 import { ChapterStatus, ContentType } from "@prisma/client";
 
+const FUHU_COOKIE = process.env.FUHU_COOKIE;
 const IMAGE_DIR = process.env.IMAGE_DIR || "/";
 const MAX_DOWNLOAD_PROCESS = Number(process.env.MAX_DOWNLOAD_PROCESS || 5);
+
+const headers = new Headers({
+  Cookie: FUHU_COOKIE!,
+});
 
 function downloadComicImages(comicId: string, chapterDir: string) {
   return new Promise<string[]>(function (resolve, reject) {

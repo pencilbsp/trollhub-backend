@@ -1,18 +1,23 @@
 import jsdom from "jsdom";
-import { ContentType } from "@prisma/client";
+import { ContentStatus, ContentType } from "@prisma/client";
 
 import prisma from "../utils/prisma";
 import getCountryCode from "../utils/country-code";
 import { extractFuhuContent, extractFuhuCreator } from "../utils/fuhu/dom-extract";
 
 const { JSDOM } = jsdom;
-const { TARGET_URL } = process.env;
+const { TARGET_URL, FUHU_COOKIE } = process.env;
 const categories = require("./categories.json");
+
+const headers = new Headers({
+  Cookie: FUHU_COOKIE!,
+});
 
 type Content = {
   url: string;
   title: string;
   type: ContentType;
+  status: ContentStatus;
 };
 
 async function loadDiscoverContent(categoryPath: string, idx: number) {
@@ -23,10 +28,10 @@ async function loadDiscoverContent(categoryPath: string, idx: number) {
   const params = new URLSearchParams({
     idx: idx.toString(),
     genre,
-    nsfw: "false",
+    nsfw: "true",
   });
 
-  const response = await fetch(url + params.toString());
+  const response = await fetch(url + params.toString(), { headers });
   const data = await response.json();
   if (!data.result) {
     console.log(categoryPath, "Đã lấy hết tất cả nội dung.");
@@ -45,6 +50,7 @@ async function loadDiscoverContent(categoryPath: string, idx: number) {
   for (const item of Array.from(discoverItemElms)) {
     const typeClass = item.querySelector(".item-type>i")?.classList;
     const linkElm: HTMLLinkElement | null = item.querySelector(".discover-item__title>a");
+    const statusElm = item.querySelector(".grid-item__badge-item.status");
     const url = linkElm?.href || "";
     const title = linkElm?.textContent || "";
     const type = typeClass?.contains("fa-book-open")
@@ -53,8 +59,10 @@ async function loadDiscoverContent(categoryPath: string, idx: number) {
       ? ContentType.comic
       : ContentType.movie;
 
-    await insertContent(url, type);
-    contents.push({ title, url, type });
+    const status = statusElm?.classList.contains("complete") ? ContentStatus.complete : ContentStatus.updating;
+
+    await insertContent(url, type, status);
+    contents.push({ title, url, type, status });
   }
 
   return contents;
@@ -71,66 +79,93 @@ async function loadDiscoverContents(categoryPath: string) {
   }
 }
 
-async function insertContent(url: string, type: ContentType) {
+async function insertContent(url: string, type: ContentType, status: ContentStatus) {
   try {
     const fid = url.split("_")[1].split(".")[0];
-    const isExistsContent = await prisma.content.findFirst({ where: { fid } });
-    if (isExistsContent) return;
+    console.log("===>", fid);
+    let newContent = await prisma.content.findFirst({ where: { fid } });
 
-    const content = await extractFuhuContent(url, type);
-    const creator = await extractFuhuCreator(content.creator.url!);
+    const content = await extractFuhuContent(url, type, headers);
+    const creator = await extractFuhuCreator(content.creator.url!, headers);
     const country = getCountryCode(content.country);
 
-    console.log("[+] Đang tạo nội dung:", content.title);
-
-    const newContent = await prisma.content.create({
-      data: {
-        fid: content.mid,
-        type: content.type,
-        title: content.title!,
-        author: content.author,
-        status: content.status,
-        thumbUrl: content.poster,
-        createdAt: content.releaseDate,
-        description: content.description,
-        totalChap: content.totalChap || 0,
-        akaTitle: content.akaTitle ? [content.akaTitle] : undefined,
-        categories: {
-          connectOrCreate: content.categories.map((category) => {
-            const create = category;
-            const where = { slug: category.slug };
-            return { create, where };
-          }),
+    if (newContent) {
+      console.log(" [+] Đang cập nhật nội dung:", content.title);
+      await prisma.content.update({
+        where: {
+          id: newContent.id,
         },
-        creator: {
-          connectOrCreate: {
-            where: { email: creator.email },
-            create: {
-              bio: creator.bio,
-              cover: creator.cover,
-              email: creator.email,
-              avatar: creator.avatar,
-              userName: creator.cname!,
-              fid: content.creator.fid,
-              name: content.creator.name!,
+        data: {
+          status,
+        },
+      });
+
+      console.log(" [+] Đang tìm các chapter mới:", content.title);
+      if (Array.isArray(content.chapters) && content.chapters.length > 0) {
+        const chaperIds = (
+          await prisma.chapter.findMany({
+            where: {
+              contentId: newContent.id,
+            },
+            select: { fid: true },
+          })
+        ).map((e) => e.fid);
+
+        content.chapters = content.chapters.filter(({ fid }) => !chaperIds.includes(fid!));
+      }
+    } else {
+      console.log(" [+] Đang tạo nội dung:", content.title);
+
+      newContent = await prisma.content.create({
+        data: {
+          fid: content.mid,
+          type: content.type,
+          title: content.title!,
+          author: content.author,
+          thumbUrl: content.poster,
+          createdAt: content.releaseDate,
+          status: status || content.status,
+          description: content.description,
+          totalChap: content.totalChap || 0,
+          akaTitle: content.akaTitle ? [content.akaTitle] : undefined,
+          categories: {
+            connectOrCreate: content.categories.map((category) => {
+              const create = category;
+              const where = { slug: category.slug };
+              return { create, where };
+            }),
+          },
+          creator: {
+            connectOrCreate: {
+              where: { email: creator.email },
+              create: {
+                bio: creator.bio,
+                cover: creator.cover,
+                email: creator.email,
+                avatar: creator.avatar,
+                userName: creator.cname!,
+                fid: content.creator.fid,
+                name: content.creator.name!,
+              },
             },
           },
-        },
-        countries: country
-          ? {
-              connectOrCreate: {
-                where: { code: country[3] },
-                create: {
-                  name: country[1],
-                  code: country[3],
+          countries: country
+            ? {
+                connectOrCreate: {
+                  where: { code: country[3] },
+                  create: {
+                    name: country[1],
+                    code: country[3],
+                  },
                 },
-              },
-            }
-          : undefined,
-      },
-    });
+              }
+            : undefined,
+        },
+      });
+    }
 
     if (Array.isArray(content.chapters) && content.chapters.length > 0) {
+      console.log(" [+] Đang tạo chapter mới:", content.chapters.length);
       await prisma.content.update({
         where: {
           id: newContent.id,
@@ -138,7 +173,7 @@ async function insertContent(url: string, type: ContentType) {
         data: {
           chapter: {
             createMany: {
-              data: content.chapters.map((c) => ({ ...c, creatorId: newContent.creatorId })),
+              data: content.chapters.map((c) => ({ ...c, creatorId: newContent!.creatorId })),
             },
           },
         },
