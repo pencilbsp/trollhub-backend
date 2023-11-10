@@ -51,7 +51,7 @@ async function loadDiscoverContent(categoryPath: string, idx: number) {
   for (const item of Array.from(discoverItemElms)) {
     const typeClass = item.querySelector(".item-type>i")?.classList;
     const linkElm: HTMLLinkElement | null = item.querySelector(".discover-item__title>a");
-    const statusElm = item.querySelector(".grid-item__badge-item.status");
+    const statusElm = item.querySelector(".discover-item__badge-item.status");
     const url = linkElm?.href || "";
     const title = linkElm?.textContent || "";
     const type = typeClass?.contains("fa-book-open")
