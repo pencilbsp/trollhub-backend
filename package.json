@@ -13,13 +13,13 @@
     "@types/slug": "^5.0.6",
     "bun-types": "latest",
     "jsdom": "^22.1.0",
-    "prisma": "^5.4.2"
+    "prisma": "latest"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "@prisma/client": "^5.5.2",
+    "@prisma/client": "latest",
     "async": "^3.2.4",
     "crypto-js": "^4.1.1",
     "date-fns": "^2.30.0",

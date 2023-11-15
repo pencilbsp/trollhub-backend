@@ -1,4 +1,7 @@
+import jsdom from "jsdom";
 import CryptoJS from "crypto-js";
+
+const { JSDOM } = jsdom;
 
 const MOBILE_USER_AGENT =
   "Mozilla/5.0 (Linux; Android 13; SM-S911U) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Mobile Safari/537.36";
@@ -80,4 +83,15 @@ export async function comicParser(comicUrl: string) {
 
   const { webp } = comic.data["sv1"];
   return imageDecrypt(webp);
+}
+
+export async function novelParser(url: string) {
+  const response = await fetch(url, { headers: mobileHeaders });
+  const body = await response.text();
+  const {
+    window: { document },
+  } = new JSDOM(body);
+
+  const elm = document.querySelector(".reading-viewport");
+  return elm?.textContent?.trim();
 }

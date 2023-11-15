@@ -1,10 +1,10 @@
 import { forEachLimit } from "async";
 import { join, basename } from "path";
-import { existsSync, mkdirSync, rmSync } from "fs";
+import { existsSync, rmSync } from "fs";
 
 import prisma from "./utils/prisma";
 import downloadWithFetch from "./utils/download-file";
-import { comicParser, createComicURL } from "./utils/fuhu/client";
+import { comicParser, createComicURL, novelParser } from "./utils/fuhu/client";
 import { ChapterStatus, ContentType } from "@prisma/client";
 
 const FUHU_COOKIE = process.env.FUHU_COOKIE;
@@ -51,19 +51,23 @@ setInterval(async () => {
 
     const chapter = await prisma.chapter.findFirst({
       where: {
-        mobileOnly: false,
-        type: ContentType.comic,
-        images: {
-          isEmpty: true,
+        mobileOnly: true,
+        type: {
+          not: ContentType.movie,
         },
+        // images: {
+        //   isEmpty: true,
+        // },
         status: {
           notIn: [ChapterStatus.error, ChapterStatus.ready],
         },
       },
       orderBy: {
-        updatedAt: "asc",
+        updatedAt: "desc",
       },
     });
+
+    console.log(chapter);
 
     if (!chapter) return;
     if (!chapter.fid) return;
@@ -76,19 +80,35 @@ setInterval(async () => {
     console.log("[+] Bắt đầu tải xuống", currentId, chapter.fid);
 
     const comicUrl = createComicURL(chapter.fid);
-    const images = await comicParser(comicUrl);
-    // const chapterDir = join(IMAGE_DIR, chapter.fid);
-    // if (!existsSync(chapterDir)) mkdirSync(chapterDir);
-    // const images = await downloadComicImages(chapter.fid, chapterDir);
-    await prisma.chapter.update({
-      where: {
-        id: currentId,
-      },
-      data: {
-        images,
-        status: ChapterStatus.ready,
-      },
-    });
+
+    if (chapter.type === ContentType.comic) {
+      const images = await comicParser(comicUrl);
+      // const chapterDir = join(IMAGE_DIR, chapter.fid);
+      // if (!existsSync(chapterDir)) mkdirSync(chapterDir);
+      // const images = await downloadComicImages(chapter.fid, chapterDir);
+      await prisma.chapter.update({
+        where: {
+          id: currentId,
+        },
+        data: {
+          images,
+          status: ChapterStatus.ready,
+        },
+      });
+    }
+
+    if (chapter.type === ContentType.novel) {
+      const text = await novelParser(comicUrl);
+      await prisma.chapter.update({
+        where: {
+          id: currentId,
+        },
+        data: {
+          text,
+          status: ChapterStatus.ready,
+        },
+      });
+    }
 
     processIds.delete(currentId);
     currentId = null;
