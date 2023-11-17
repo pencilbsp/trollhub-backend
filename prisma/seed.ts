@@ -94,15 +94,16 @@ async function insertContent(url: string, type: ContentType, status: ContentStat
 
     if (newContent) {
       console.log(" [+] Đang cập nhật nội dung:", content.title);
-      await prisma.content.update({
-        where: {
-          id: newContent.id,
-        },
-        data: {
-          status,
-          keywords,
-        },
-      });
+      newContent.status !== "complete" &&
+        (await prisma.content.update({
+          where: {
+            id: newContent.id,
+          },
+          data: {
+            status,
+            keywords,
+          },
+        }));
 
       console.log(" [+] Đang tìm các chapter mới:", content.title);
       if (Array.isArray(content.chapters) && content.chapters.length > 0) {
