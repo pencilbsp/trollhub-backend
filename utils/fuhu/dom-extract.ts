@@ -12,8 +12,8 @@ type Chapter = {
   mobileOnly: boolean;
 };
 
+const BASE_FUHU_URL = "https://fuhuzz.net";
 const DEFAULT_STATUS = ["Đang cập nhật", "Đang xuất bản"];
-const BASE_FUHU_URL = "https://fuhuzz.com";
 const INFO_SELECTOR = "body > div.detail-container.container.mt60 > div > div.col-sm-8 > div.row.mt10";
 
 function findByTextContent(root: Element | null, texts: string[]) {
