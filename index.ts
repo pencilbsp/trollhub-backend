@@ -54,11 +54,11 @@ setInterval(async () => {
 
     const chapter = await prisma.chapter.findFirst({
       where: {
-        // mobileOnly: true,
+        // mobileOnly: false,
         // type: "movie",
-        // type: {
-        //   not: ContentType.movie,
-        // },
+        type: {
+          not: ContentType.movie,
+        },
         images: {
           isEmpty: true,
         },
