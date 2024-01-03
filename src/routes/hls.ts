@@ -22,7 +22,10 @@ const hlsRoutes = new Elysia({ prefix: "/hls" })
         .match(new RegExp(VALID_SEGMENT, "g"))
         ?.map((segment) => segment.match(VALID_SEGMENT)![1])
 
-      segments?.forEach((uri) => (m3u8Content = m3u8Content.replace(uri, `/hls/segment/${base64Encode(uri)}`)))
+      segments?.forEach((uri) => {
+        const slug = base64Encode(uri).replaceAll("/", "-")
+        m3u8Content = m3u8Content.replace(uri, `/hls/segment/${slug}`)
+      })
 
       set.headers["Content-Type"] = "application/x-mpegURL"
       set.headers["Cache-Control"] = `public, max-age=${MAX_AGE}`
@@ -34,7 +37,7 @@ const hlsRoutes = new Elysia({ prefix: "/hls" })
   })
   .get("/segment/:slug", async ({ params, set }) => {
     try {
-      const uri = base64Decode(params.slug)
+      const uri = base64Decode(params.slug.replaceAll("-", "/"))
       const response = await fetch(uri)
 
       const stream = new Stream(response)
