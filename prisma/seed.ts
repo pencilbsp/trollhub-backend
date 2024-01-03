@@ -2,9 +2,9 @@ import slug from "slug";
 import jsdom from "jsdom";
 import { ContentStatus, ContentType } from "@prisma/client";
 
-import prisma from "../utils/prisma";
-import getCountryCode from "../utils/country-code";
-import { extractFuhuContent, extractFuhuCreator } from "../utils/fuhu/dom-extract";
+import prisma from "../src/utils/prisma";
+import getCountryCode from "../src/utils/country-code";
+import { extractFuhuContent, extractFuhuCreator } from "../src/utils/fuhu/dom-extract";
 
 const { JSDOM } = jsdom;
 const { TARGET_URL, FUHU_COOKIE } = process.env;
