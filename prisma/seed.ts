@@ -73,7 +73,7 @@ async function loadDiscoverContents(categoryPath: string) {
   let index = 0
   let latestCount = 10
 
-  while (latestCount !== 0) {
+  while (latestCount !== 0 && index < 31) {
     const result = await loadDiscoverContent(categoryPath, index)
     latestCount = result.length
     index += 10
@@ -181,6 +181,7 @@ async function insertContent(url: string, type: ContentType, status: ContentStat
               data: content.chapters.map((c) => ({ ...c, creatorId: newContent!.creatorId })),
             },
           },
+          updatedAt: new Date(),
         },
       })
     }
