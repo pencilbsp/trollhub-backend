@@ -83,7 +83,6 @@ async function loadDiscoverContents(categoryPath: string) {
 async function insertContent(url: string, type: ContentType, status: ContentStatus) {
   try {
     const fid = url.split("_")[1].split(".")[0]
-    console.log("===>", fid)
     let newContent = await prisma.content.findFirst({ where: { fid } })
 
     const content = await extractFuhuContent(url, type, headers)
@@ -105,7 +104,7 @@ async function insertContent(url: string, type: ContentType, status: ContentStat
       //     },
       //   }))
 
-      console.log(" [+] Đang tìm các chapter mới:", content.title)
+      // console.log(" [+] Đang tìm các chapter mới:", fid, content.title)
       if (Array.isArray(content.chapters) && content.chapters.length > 0) {
         const chaperIds = (
           await prisma.chapter.findMany({
@@ -119,7 +118,7 @@ async function insertContent(url: string, type: ContentType, status: ContentStat
         content.chapters = content.chapters.filter(({ fid }) => !chaperIds.includes(fid!))
       }
     } else {
-      console.log(" [+] Đang tạo nội dung:", content.title)
+      console.log(" [+] Đang tạo nội dung:", fid, content.title)
 
       newContent = await prisma.content.create({
         data: {
@@ -143,7 +142,7 @@ async function insertContent(url: string, type: ContentType, status: ContentStat
           },
           creator: {
             connectOrCreate: {
-              where: { email: creator.email },
+              where: { userName: creator.cname! },
               create: {
                 bio: creator.bio,
                 cover: creator.cover,
@@ -171,7 +170,7 @@ async function insertContent(url: string, type: ContentType, status: ContentStat
     }
 
     if (Array.isArray(content.chapters) && content.chapters.length > 0) {
-      console.log(" [+] Đang tạo chapter mới:", content.chapters.length)
+      console.log(" [+] Đang tạo chapter mới:", fid, content.chapters.length)
       await prisma.content.update({
         where: {
           id: newContent.id,
