@@ -1,6 +1,6 @@
 import { join } from "path"
-import Elysia from "elysia"
 import { existsSync } from "fs"
+import Elysia, { t } from "elysia"
 import { Stream } from "@elysiajs/stream"
 
 const MAX_AGE = 7 * 24 * 60 * 60 // 7 days
@@ -10,6 +10,30 @@ const base64Encode = (data: string) => Buffer.from(data).toString("base64")
 const base64Decode = (data: string) => Buffer.from(data, "base64").toString()
 
 const hlsRoutes = new Elysia({ prefix: "/hls" })
+  .post(
+    "/manifest/:fileId",
+    async ({ params, body, set, headers }) => {
+      try {
+        let filePath = join(M3U8_DIR, params.fileId)
+        if (!filePath.endsWith(".m3u8")) filePath += ".m3u8"
+
+        body = body.trim()
+        if (!body.startsWith("#EXTM3U") || !body.endsWith("#EXT-X-ENDLIST"))
+          throw new Error("Content type is not supported")
+
+        await Bun.write(filePath, body)
+        return { message: "Upload successfully" }
+      } catch (error) {
+        set.status = 500
+        if (error instanceof Error) {
+          return { error: { message: error.message } }
+        }
+      }
+    },
+    {
+      body: t.String(),
+    }
+  )
   .get("/manifest/:fileId", async ({ params, set }) => {
     try {
       const filePath = join(M3U8_DIR, params.fileId)
@@ -27,12 +51,14 @@ const hlsRoutes = new Elysia({ prefix: "/hls" })
         m3u8Content = m3u8Content.replace(uri, `/hls/segment/${slug}`)
       })
 
-      set.headers["Content-Type"] = "application/x-mpegURL"
+      // set.headers["Content-Type"] = "application/x-mpegURL"
+      set.headers["Content-Type"] = "application/vnd.apple.mpegurl"
       set.headers["Cache-Control"] = `public, max-age=${MAX_AGE}`
       return m3u8Content
     } catch (error) {
       console.log(error)
       set.status = 404
+      return
     }
   })
   .get("/segment/:slug", async ({ params, set }) => {
@@ -54,6 +80,7 @@ const hlsRoutes = new Elysia({ prefix: "/hls" })
     } catch (error) {
       console.log(error)
       set.status = 404
+      return
     }
   })
 

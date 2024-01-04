@@ -2,6 +2,7 @@
   "name": "trollhub-backend",
   "type": "module",
   "scripts": {
+    "start": "bun run src/app.ts",
     "seed": "bun run prisma/seed.ts",
     "dev": "bun run --watch src/app.ts",
     "postinstall": "bun prisma generate"
