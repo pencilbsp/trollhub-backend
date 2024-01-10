@@ -8,10 +8,8 @@ export const VIDEO_VERSION = "0.1.1a"
 export const WEB_SECRET_IV = "f75b86843764e1f1"
 export const WEB_SECRET_KEY = "/;`dc6>RB++jqGXq"
 export const WEB_ENDPOIT = "https://idoitmyself.xyz"
-export const USER_AGENT =
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-export const MOBILE_USER_AGENT =
-  "Mozilla/5.0 (Linux; Android 13; SM-S911U) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Mobile Safari/537.36"
+export const USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+export const MOBILE_USER_AGENT = "Mozilla/5.0 (Linux; Android 13; SM-S911U) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Mobile Safari/537.36"
 
 const mobileHeaders = new Headers({ "User-Agent": MOBILE_USER_AGENT })
 

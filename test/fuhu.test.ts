@@ -4,7 +4,7 @@ import { extractFuhuContent, extractFuhuCreator } from "../src/utils/fuhu/dom-ex
 import extractVideo from "../src/utils/fuhu/video"
 
 // https://fuhuzz.com/comic-chapter/nhan-vat-phan-dien-nay-co-chut-luong-tam-nhung-khong-nhieu-chapter-183_A0MmlQgV.html
-const TEST_COMIC_ID = "c58GtAV0"
+const TEST_COMIC_ID = "H9GoGgK5"
 const TEST_VIDEO_ID = "opD7YQ0e"
 const TEST_CHANNEL_URL = "https://fuhuzz.net/channel/truyen30s"
 const TEST_NOVEL_URL = "https://fuhuzz.net/novel-chapter/chuong-1_uzkjjAPe.html"
@@ -19,11 +19,11 @@ const TEST_URL = "https://fuhuzz.net/movie/nang-hau-an-danh-2023-sao-chai-delive
 //   expect(content.chapters).toBeArray()
 // })
 
-test("Extract Fuhu Video", async () => {
-  const m3u8 = await extractVideo("vwWKAQjj")
-  console.log(m3u8)
-  expect(m3u8).toBeString()
-}, { timeout: 60000 })
+// test("Extract Fuhu Video", async () => {
+//   const m3u8 = await extractVideo("vwWKAQjj")
+//   console.log(m3u8)
+//   expect(m3u8).toBeString()
+// }, { timeout: 60000 })
 
 // test("Extract Fuhu Creator", async () => {
 //   const creator = await extractFuhuCreator(TEST_CHANNEL_URL)
@@ -31,9 +31,9 @@ test("Extract Fuhu Video", async () => {
 //   expect(creator.cover).toBeString()
 // })
 
-// test("Decrypt Fuhu Comic", async () => {
-//   const comicUrl = createEmbedUrl(TEST_COMIC_ID, COMIC_VERSION)
-//   expect(comicUrl).toBeString()
-//   const imageUrls = await comicParser(comicUrl)
-//   expect(imageUrls).toBeArray()
-// })
+test("Decrypt Fuhu Comic", async () => {
+  const comicUrl = createEmbedUrl(TEST_COMIC_ID, COMIC_VERSION)
+  expect(comicUrl).toBeString()
+  const imageUrls = await comicParser(comicUrl)
+  expect(imageUrls).toBeArray()
+})

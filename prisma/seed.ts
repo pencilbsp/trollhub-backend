@@ -4,7 +4,7 @@ import { ContentStatus, ContentType } from "@prisma/client"
 
 import prisma from "../src/utils/prisma"
 import getCountryCode from "../src/utils/country-code"
-import { extractFuhuContent, extractFuhuCreator } from "../src/utils/fuhu/dom-extract"
+import { extractFuhuContent, extractFuhuCreator, extractFuhuFirstContent } from "../src/utils/fuhu/dom-extract"
 
 const { JSDOM } = jsdom
 const { TARGET_URL, FUHU_COOKIE } = process.env
@@ -49,18 +49,7 @@ async function loadDiscoverContent(categoryPath: string, idx: number) {
   }
 
   for (const item of Array.from(discoverItemElms)) {
-    const typeClass = item.querySelector(".item-type>i")?.classList
-    const linkElm: HTMLLinkElement | null = item.querySelector(".discover-item__title>a")
-    const statusElm = item.querySelector(".discover-item__badge-item.status")
-    const url = linkElm?.href || ""
-    const title = linkElm?.textContent || ""
-    const type = typeClass?.contains("fa-book-open")
-      ? ContentType.novel
-      : typeClass?.contains("fa-images")
-      ? ContentType.comic
-      : ContentType.movie
-
-    const status = statusElm?.classList.contains("complete") ? ContentStatus.complete : ContentStatus.updating
+    const { url, type, status, title } = extractFuhuFirstContent(item)
 
     await insertContent(url, type, status)
     contents.push({ title, url, type, status })
@@ -142,15 +131,15 @@ async function insertContent(url: string, type: ContentType, status: ContentStat
           },
           creator: {
             connectOrCreate: {
-              where: { userName: creator.cname! },
+              where: { userName: creator.userName },
               create: {
                 bio: creator.bio,
+                fid: creator.fid,
+                name: creator.name,
                 cover: creator.cover,
                 email: creator.email,
                 avatar: creator.avatar,
-                userName: creator.cname!,
-                fid: content.creator.fid,
-                name: content.creator.name!,
+                userName: creator.userName,
               },
             },
           },

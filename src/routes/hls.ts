@@ -3,6 +3,8 @@ import { existsSync } from "fs"
 import Elysia, { t } from "elysia"
 import { Stream } from "@elysiajs/stream"
 
+import getRedisClient from "../utils/redis"
+
 const MAX_AGE = 7 * 24 * 60 * 60 // 7 days
 const VALID_SEGMENT = /#EXTINF:[\d.]+,\n(http.*?)\n/
 const M3U8_DIR = join(process.cwd(), "public", "m3u8")
@@ -22,6 +24,10 @@ const hlsRoutes = new Elysia({ prefix: "/hls" })
           throw new Error("Content type is not supported")
 
         await Bun.write(filePath, body)
+
+        const redisClient = await getRedisClient()
+        await redisClient.del(params.fileId.replace(".m3u8", ""))
+
         return { message: "Upload successfully" }
       } catch (error) {
         set.status = 500
