@@ -3,7 +3,7 @@ import CryptoJS from "crypto-js"
 
 const { JSDOM } = jsdom
 
-export const COMIC_VERSION = "0.0.8"
+export const COMIC_VERSION = "0.1.4"
 export const VIDEO_VERSION = "0.1.1a"
 export const WEB_SECRET_IV = "f75b86843764e1f1"
 export const WEB_SECRET_KEY = "/;`dc6>RB++jqGXq"
