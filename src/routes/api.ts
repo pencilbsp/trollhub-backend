@@ -1,4 +1,5 @@
 import Elysia, { t } from "elysia"
+
 import prisma from "@/utils/prisma"
 import upsertContents from "@/utils/upsert-contents"
 import { getChannelContents } from "@/utils/fuhu/crawl"
@@ -7,7 +8,9 @@ import { extractFuhuCreator } from "@/utils/fuhu/dom-extract"
 const SUPPORTED_FUHU_TYPES = ["comic", "novel", "movie", "channel"]
 const VALID_FUHU_URL = /^\/(?<type>(?:movie|comic|novel|channel))\/(?:.*?_|)(?<fid>\w+)(?:\.html|)$/
 
-const apiRoutes = new Elysia({ prefix: "/api" }).post(
+const apiRoutes = new Elysia({ prefix: "/api" })
+
+apiRoutes.post(
   "/request-content",
   async ({ body, set }) => {
     try {
@@ -67,6 +70,19 @@ const apiRoutes = new Elysia({ prefix: "/api" }).post(
   },
   {
     body: t.Object({
+      url: t.String(),
+    }),
+  }
+)
+
+apiRoutes.post(
+  "/logger",
+  ({ body }) => {
+    console.log(body.url, body.data)
+  },
+  {
+    body: t.Object({
+      data: t.Any(),
       url: t.String(),
     }),
   }

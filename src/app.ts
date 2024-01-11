@@ -7,6 +7,7 @@ import apiRoutes from "./routes/api"
 import hlsRoutes from "./routes/hls"
 import videoRoutes from "./routes/video"
 import imageRoutes from "./routes/image"
+import uploadRoutes from "./routes/upload"
 
 new Elysia()
   .use(cors())
@@ -16,5 +17,6 @@ new Elysia()
   .use(hlsRoutes)
   .use(videoRoutes)
   .use(imageRoutes)
+  .use(uploadRoutes)
   .get("/", () => "Hello Elysia")
   .listen(3001)

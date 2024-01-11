@@ -4,7 +4,7 @@ import { extractFuhuContent, extractFuhuCreator } from "../src/utils/fuhu/dom-ex
 import extractVideo from "../src/utils/fuhu/video"
 
 // https://fuhuzz.com/comic-chapter/nhan-vat-phan-dien-nay-co-chut-luong-tam-nhung-khong-nhieu-chapter-183_A0MmlQgV.html
-const TEST_COMIC_ID = "H9GoGgK5"
+const TEST_COMIC_ID = "76QpDQ3a"
 const TEST_VIDEO_ID = "opD7YQ0e"
 const TEST_CHANNEL_URL = "https://fuhuzz.net/channel/truyen30s"
 const TEST_NOVEL_URL = "https://fuhuzz.net/novel-chapter/chuong-1_uzkjjAPe.html"
@@ -33,6 +33,7 @@ const TEST_URL = "https://fuhuzz.net/movie/nang-hau-an-danh-2023-sao-chai-delive
 
 test("Decrypt Fuhu Comic", async () => {
   const comicUrl = createEmbedUrl(TEST_COMIC_ID, COMIC_VERSION)
+  console.log(comicUrl)
   expect(comicUrl).toBeString()
   const imageUrls = await comicParser(comicUrl)
   expect(imageUrls).toBeArray()
