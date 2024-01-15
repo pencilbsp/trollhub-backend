@@ -9,6 +9,8 @@ import videoRoutes from "./routes/video"
 import imageRoutes from "./routes/image"
 import uploadRoutes from "./routes/upload"
 
+console.log("Start server on port: 3001")
+
 new Elysia()
   .use(cors())
   .use(html())
@@ -18,5 +20,7 @@ new Elysia()
   .use(videoRoutes)
   .use(imageRoutes)
   .use(uploadRoutes)
-  .get("/", () => "Hello Elysia")
+  .get("/", () => {
+    return "Hello Elysia"
+  })
   .listen(3001)

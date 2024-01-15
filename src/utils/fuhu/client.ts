@@ -129,3 +129,64 @@ export function makeHlsPlaylist(segments: Sengment[]) {
   contents.push("#EXT-X-ENDLIST")
   return contents.join("\n")
 }
+
+export function reversImageUrl(fakeUrl: string) {
+  const data = fakeUrl.match(/\/([^\/]+)\.(webp|jpeg)/)
+  if (!data) throw new Error("Url ảnh không hợp lệ")
+
+  const param = atob(data[1].replaceAll("-", "+").replaceAll("_", "/"))
+  let str = ""
+  for (let i = 0; i < param.length; i++) {
+    const char = param.charCodeAt(i).toString(16)
+    str += char.length === 2 ? char : "0" + char
+  }
+
+  str = str.toUpperCase()
+
+  let chars: string[] | string = []
+  for (let i = 0; i < str.length; i++) {
+    let char =
+      parseInt(str[i], 16) -
+      parseInt("06f7be34edf067082dbfabb4e25ca928"[i % "06f7be34edf067082dbfabb4e25ca928".length], 16)
+    if (char < 0) {
+      char += 16
+    }
+    chars.push((char % 16).toString(16))
+  }
+
+  chars = chars.join("")
+  chars = btoa(
+    chars
+      .match(/\w{2}/g)!
+      .map(function (char) {
+        return String.fromCharCode(parseInt(char, 16))
+      })
+      .join("")
+  )
+
+  str = chars.replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "")
+  return fakeUrl.replace(data[1], str)
+}
+
+export function filterStringsStartingWithSamePrefix(arr: string[]): [string[], string] {
+  // Sắp xếp mảng để các chuỗi giống nhau nằm cạnh nhau
+  const data = [...arr].map((i) => i.split("/")[4])
+  const data2 = [...data]
+  data2.sort()
+  const startsWiths = [data2[0].slice(0, 10), data2[1].slice(0, 10), data2[data2.length - 1].slice(0, 10)]
+  let ignorePrefix = ""
+  if (startsWiths[0] === startsWiths[1] && startsWiths[0] !== startsWiths[2]) {
+    ignorePrefix = startsWiths[2]
+  } else if (startsWiths[1] === startsWiths[2] && startsWiths[0] !== startsWiths[2]) {
+    ignorePrefix = startsWiths[0]
+  }
+
+  if (ignorePrefix) {
+    const ignoreUrlIndex = data.findIndex((i) => i.startsWith(ignorePrefix))
+    const ignoreUrl = arr[ignoreUrlIndex]
+    arr.splice(ignoreUrlIndex, 1)
+    return [arr, ignoreUrl]
+  }
+
+  return [arr, ""]
+}

@@ -56,12 +56,12 @@ setInterval(async () => {
       where: {
         // mobileOnly: false,
         // type: "movie",
-        type: {
-          not: ContentType.movie,
-        },
-        images: {
-          isEmpty: true,
-        },
+        // type: {
+        //   not: ContentType.movie,
+        // },
+        // images: {
+        //   isEmpty: true,
+        // },
         status: {
           notIn: [ChapterStatus.error, ChapterStatus.ready],
         },
@@ -77,7 +77,7 @@ setInterval(async () => {
     if (!chapter) return
     if (!chapter.fid) return
     if (processIds.has(chapter.id)) return
-    if (chapter && chapter.images && chapter.images.length > 0) return
+    if (chapter.images && chapter.images.length && chapter.images[0].includes("/simages/")) return
 
     currentId = chapter.id
     processIds.set(currentId, chapter.fid)
