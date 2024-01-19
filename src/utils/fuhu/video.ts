@@ -9,10 +9,9 @@ import {
   createEmbedUrl,
   makeHlsPlaylist,
 } from "./client"
+import { decode } from "../base64"
 
 const VALID_PLAYER_INIT = /new\sClassicPlayer.*?({[\s\w\n!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+})\)\).run\(\)/
-
-const base64Decode = (value: string) => Buffer.from(value, "base64").toString()
 
 async function tracking(type: string, payload: any) {
   const origin = new URL(payload.src).origin
@@ -93,7 +92,7 @@ export default async function extractVideo(fid: string) {
     const isKey = line[0] === "key"
 
     if (isKey) {
-      const hlsKeyBase64 = base64Decode(line[1])
+      const hlsKeyBase64 = decode(line[1])
       const execResult = /URI="(?<hlsKey>.*?)",IV=(?<hlsIv>.*?)$/.exec(hlsKeyBase64)
       if (!execResult?.groups || !execResult.groups.hlsIv || !execResult.groups.hlsKey) throw new Error("")
 

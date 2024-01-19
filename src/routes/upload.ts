@@ -11,12 +11,6 @@ uploadRoutes.post(
     try {
       if (!body.data) throw new Error("Không có gì để upload")
 
-      // const keys = Object.keys(body.keys)
-      // if (!keys.length) throw new Error("Không có key để giải mã")
-
-      // const key = keys[0]
-      // const iv = body.keys[key]
-
       const { pathname } = new URL(body.url)
       const slug = pathname.split("/")[2].replaceAll("_", "/").replaceAll("-", "+") + "=="
       const payload = decrypt(slug, "--KpQG3w0km3imY", "b63e541bc9ece19a").split("|")
@@ -53,7 +47,7 @@ uploadRoutes.post(
   {
     body: t.Object({
       url: t.String(),
-      // fid: t.String(),
+      fid: t.String(),
       data: t.Object({
         sv1: t.Object({
           webp: t.Array(t.Any()),

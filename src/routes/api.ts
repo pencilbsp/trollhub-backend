@@ -1,9 +1,12 @@
 import Elysia, { t } from "elysia"
 
 import prisma from "@/utils/prisma"
+import { hexToString } from "@/utils/base64"
 import upsertContents from "@/utils/upsert-contents"
 import { getChannelContents } from "@/utils/fuhu/crawl"
+import decryptImages from "@/utils/fuhu/decrypt-images"
 import { extractFuhuCreator } from "@/utils/fuhu/dom-extract"
+import decryptHls, { hlsLogger } from "@/utils/fuhu/decrypt-hls"
 
 const SUPPORTED_FUHU_TYPES = ["comic", "novel", "movie", "channel"]
 const VALID_FUHU_URL = /^\/(?<type>(?:movie|comic|novel|channel))\/(?:.*?_|)(?<fid>\w+)(?:\.html|)$/
@@ -76,14 +79,83 @@ apiRoutes.post(
 )
 
 apiRoutes.post(
-  "/logger",
-  ({ body }) => {
-    console.log(body.url, body.data)
+  "/ajax-logger",
+  async ({ body }) => {
+    try {
+      console.log("=========================AJAX LOGGER=========================")
+      console.log("Ajax url:", body.url)
+
+      if (body.type === "comic") {
+        await decryptImages(body.fid, body.response)
+      }
+
+      if (body.type === "movie" && body.url === "/content/parseUrl") {
+        await hlsLogger(body.fid, body.response)
+      }
+
+      return { success: true }
+      // return { success: true, message: "Logged ajax response successfully" }
+    } catch (error: any) {
+      // console.log(error)
+      return { message: error.message }
+    }
   },
   {
     body: t.Object({
-      data: t.Any(),
       url: t.String(),
+      fid: t.String(),
+      type: t.String(),
+      response: t.Any(),
+      contentType: t.String(),
+      payload: t.Optional(t.Any()),
+    }),
+  }
+)
+
+apiRoutes.post(
+  "/key-logger",
+  ({ body }) => {
+    console.log("=========================CRYPTOJS KEY LOGGER=========================")
+    console.log("Crypto ciphertext ->", body.ciphertext)
+    console.log("Crypto key:iv ->", `${body.key}:${body.iv}`)
+    console.log("\n")
+
+    return { success: true }
+  },
+  {
+    body: t.Object({
+      iv: t.String(),
+      key: t.String(),
+      fid: t.String(),
+      type: t.String(),
+      ciphertext: t.String(),
+    }),
+  }
+)
+
+apiRoutes.post(
+  "/keys-logger",
+  async ({ body }) => {
+    try {
+      console.log("=========================CRYPTOJS KEYS LOGGER=========================")
+      console.log("Crypto keys ->", body.fid, body.keys)
+
+      const keys = Object.keys(body.keys).map((key) => ({
+        key: hexToString(key),
+        iv: hexToString(body.keys[key]),
+      }))
+
+      await decryptHls(body.fid, keys)
+
+      return { success: true, message: "Logged crypto keys successfully" }
+    } catch (error: any) {
+      return { success: false, message: error.message }
+    }
+  },
+  {
+    body: t.Object({
+      fid: t.String(),
+      keys: t.Object(t.Any()),
     }),
   }
 )

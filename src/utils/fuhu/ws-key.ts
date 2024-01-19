@@ -38,6 +38,7 @@ export default function wsMessageKey(url: string, marker: string): Promise<WsKey
     socket.onmessage = (message) => {
       try {
         const messageString = bufferToString(message.data)
+        console.log(messageString)
         const keyString = decrypt(messageString, WEB_SECRET_KEY, WEB_SECRET_IV)
         const [key, iv] = keyString.split("|")
         keys.push({ key, iv })

@@ -8,6 +8,8 @@ import hlsRoutes from "./routes/hls"
 import videoRoutes from "./routes/video"
 import imageRoutes from "./routes/image"
 import uploadRoutes from "./routes/upload"
+// import webSocket from "./routes/web-socket"
+import redirectRoute from "./routes/redirect"
 
 console.log("Start server on port: 3001")
 
@@ -20,6 +22,8 @@ new Elysia()
   .use(videoRoutes)
   .use(imageRoutes)
   .use(uploadRoutes)
+  .use(redirectRoute)
+  // .use(webSocket)
   .get("/", () => {
     return "Hello Elysia"
   })
