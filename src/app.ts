@@ -5,7 +5,6 @@ import { staticPlugin } from "@elysiajs/static"
 
 import apiRoutes from "./routes/api"
 import hlsRoutes from "./routes/hls"
-import videoRoutes from "./routes/video"
 import imageRoutes from "./routes/image"
 import uploadRoutes from "./routes/upload"
 // import webSocket from "./routes/web-socket"
@@ -19,7 +18,6 @@ new Elysia()
   .use(staticPlugin())
   .use(apiRoutes)
   .use(hlsRoutes)
-  .use(videoRoutes)
   .use(imageRoutes)
   .use(uploadRoutes)
   .use(redirectRoute)
