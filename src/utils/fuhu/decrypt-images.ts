@@ -34,21 +34,21 @@ export default async function decryptImages(fid: string, { data }: AjaxComicResp
   const [images] = filterStringsStartingWithSamePrefix(imageUrls)
   if (!images.length) throw new Error("Không có hình ảnh nào")
 
-  if (chapter) {
-    await prisma.chapter.update({
-      where: {
-        id: chapter.id,
-      },
-      data: {
-        status: "ready",
-        images: images,
-      },
-    })
+  // if (chapter) {
+  //   await prisma.chapter.update({
+  //     where: {
+  //       id: chapter.id,
+  //     },
+  //     data: {
+  //       status: "ready",
+  //       images: images,
+  //     },
+  //   })
 
-    console.log(`[+] ${fid} -> Đã upload thành công ${images.length} hình ảnh`)
-  } else {
-    const filePath = join(STATIC_DIR, "images", fid + ".json")
-    await Bun.write(filePath, JSON.stringify(images))
-    console.log(`[+] ${fid} -> Đã lưu thành công ${images.length} hình ảnh`)
-  }
+  //   console.log(`[+] ${fid} -> Đã upload thành công ${images.length} hình ảnh`)
+  // } else {
+  const filePath = join(STATIC_DIR, "images", fid + ".json")
+  await Bun.write(filePath, JSON.stringify(images))
+  console.log(`[+] ${fid} -> Đã lưu thành công ${images.length} hình ảnh`)
+  // }
 }
