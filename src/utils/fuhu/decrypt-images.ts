@@ -1,4 +1,6 @@
+import { $ } from "bun"
 import { join } from "path"
+import { existsSync } from "fs"
 
 import prisma from "@/utils/prisma"
 import { STATIC_DIR } from "@/configs"
@@ -7,7 +9,7 @@ import { decrypt, filterStringsStartingWithSamePrefix, reversImageUrl } from "./
 type Image = string[]
 
 type AjaxComicResponse = {
-  state: string
+  state?: string
   data: {
     data: {
       sv1: {
@@ -24,7 +26,7 @@ type AjaxComicResponse = {
 export default async function decryptImages(fid: string, { data }: AjaxComicResponse) {
   if (data.error !== 0) throw new Error(data.error_msg)
 
-  const chapter = await prisma.chapter.findFirst({ where: { fid } })
+  // const chapter = await prisma.chapter.findFirst({ where: { fid } })
 
   const hashs = data.data.sv1.webp
   const imageUrls = ([] as Image)
@@ -47,7 +49,10 @@ export default async function decryptImages(fid: string, { data }: AjaxComicResp
 
   //   console.log(`[+] ${fid} -> Đã upload thành công ${images.length} hình ảnh`)
   // } else {
-  const filePath = join(STATIC_DIR, "images", fid + ".json")
+  const imageDir = join(STATIC_DIR, "images", fid)
+  if (!existsSync(imageDir)) await $`mkdir ${imageDir}`
+
+  const filePath = join(imageDir, "data.json")
   await Bun.write(filePath, JSON.stringify(images))
   console.log(`[+] ${fid} -> Đã lưu thành công ${images.length} hình ảnh`)
   // }

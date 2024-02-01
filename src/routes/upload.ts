@@ -58,4 +58,41 @@ uploadRoutes.post(
   }
 )
 
+uploadRoutes.post(
+  "/image",
+  async ({ body }) => {
+    try {
+      const fileName = body.image.name
+      const buffer = await body.image.arrayBuffer()
+      await Bun.write(`public/images/test/${fileName}`, buffer)
+    } catch (error: any) {
+      console.log(error)
+      return { message: error.message }
+    }
+  },
+  {
+    body: t.Object({
+      image: t.File(),
+    }),
+  }
+)
+
+uploadRoutes.post(
+  "/image2",
+  async ({ body }) => {
+    try {
+      console.log(body.url, body.data)
+    } catch (error: any) {
+      console.log(error)
+      return { message: error.message }
+    }
+  },
+  {
+    body: t.Object({
+      data: t.String(),
+      url: t.String(),
+    }),
+  }
+)
+
 export default uploadRoutes

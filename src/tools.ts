@@ -1,49 +1,15 @@
-import { forEachLimit } from "async"
-import { join, basename } from "path"
+import { join } from "path"
 import { existsSync, rmSync } from "fs"
 import { writeFile } from "fs/promises"
 
 import prisma from "./utils/prisma"
 import extractVideo from "./utils/fuhu/video"
-import downloadWithFetch from "./utils/download-file"
 import { ChapterStatus, ContentType } from "@prisma/client"
 import { COMIC_VERSION, comicParser, createEmbedUrl, novelParser } from "./utils/fuhu/client"
 
 const M3U8_DIR = "public/m3u8"
-const FUHU_COOKIE = process.env.FUHU_COOKIE
 const IMAGE_DIR = process.env.IMAGE_DIR || "/"
 const MAX_DOWNLOAD_PROCESS = Number(process.env.MAX_DOWNLOAD_PROCESS || 5)
-
-const headers = new Headers({
-  Cookie: FUHU_COOKIE!,
-})
-
-function downloadComicImages(comicId: string, chapterDir: string) {
-  return new Promise<string[]>(function (resolve, reject) {
-    const comicUrl = createEmbedUrl(comicId, COMIC_VERSION)
-    comicParser(comicUrl)
-      .then((imageUrls) =>
-        forEachLimit(
-          imageUrls,
-          10,
-          function (imageUrl, cb) {
-            let imageName = basename(imageUrl)
-            if (imageName.includes("?v=")) imageName = imageName.split("?")[0]
-            const imagePath = join(chapterDir, imageName)
-            downloadWithFetch(imageUrl, imagePath)
-              .then(() => cb())
-              .catch((error) => cb(error))
-          },
-          function (err) {
-            console.log(err)
-            if (err) return reject(err)
-            return resolve(imageUrls)
-          }
-        )
-      )
-      .catch((err) => reject(err))
-  })
-}
 
 const processIds = new Map()
 setInterval(async () => {

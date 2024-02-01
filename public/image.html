@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      #viewer {
+        max-width: 400px;
+        margin: 0 auto;
+        border: 1px solid black;
+      }
+
+      #viewer img {
+        display: block;
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="viewer"></div>
+    <script>
+      ;(async () => {
+        const url = new URL(window.location.href)
+        const fid = url.searchParams.get("fid")
+        const response = await fetch(`/api/fttps:webp/${fid}`)
+        const data = await response.json()
+
+        if (Array.isArray(data.images)) {
+          const root = document.getElementById("viewer")
+
+          for (let index = 0; index < data.images.length; index++) {
+            const url = data.images[index]
+            const image = document.createElement("img")
+            image.src = `/public/images/${fid}/${url}`
+            root.append(image)
+          }
+        }
+      })()
+    </script>
+  </body>
+</html>
