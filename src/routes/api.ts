@@ -2,6 +2,8 @@ import { join } from "path"
 import Elysia, { t } from "elysia"
 import { readdir } from "fs/promises"
 
+import uploadRoutes from "./upload"
+
 import prisma from "@/utils/prisma"
 import { STATIC_DIR } from "@/configs"
 import { hexToString } from "@/utils/base64"
@@ -15,6 +17,54 @@ const SUPPORTED_FUHU_TYPES = ["comic", "novel", "movie", "channel"]
 const VALID_FUHU_URL = /^\/(?<type>(?:movie|comic|novel|channel))\/(?:.*?_|)(?<fid>\w+)(?:\.html|)$/
 
 const apiRoutes = new Elysia({ prefix: "/api" })
+
+apiRoutes.get(
+  "/seek",
+  async ({ query }) => {
+    try {
+      const videoDir = join(STATIC_DIR, "m3u8", query.fid)
+      const m3u8Path = join(videoDir, "index.m3u8")
+
+      const f = Bun.file(m3u8Path)
+      const m3u8Content = await f.text()
+      const segments = m3u8Content.match(/#EXTINF:\d+(?:.\d+|),\n.*?$/gm)
+      if (!segments) throw new Error("Không thể phân tích tệp tin m3u8")
+
+      let to = 0
+      let index = 0
+      while (true) {
+        const segment = segments[index]
+        if (!segment) break
+
+        const time = segment.match(/#EXTINF:(\d+(?:.\d+|)),\n/)![1]
+        to += parseFloat(time)
+        index++
+
+        if (
+          segment.includes("/sile/") ||
+          segment.includes("tsredirector") ||
+          segment.includes("storage.googleapis.com")
+        ) {
+          break
+        }
+      }
+
+      return { to: Math.floor(to) }
+    } catch (error: any) {
+      return {
+        to: 0,
+        error: {
+          message: error.message,
+        },
+      }
+    }
+  },
+  {
+    query: t.Object({
+      fid: t.String(),
+    }),
+  }
+)
 
 apiRoutes.post(
   "/request-content",
@@ -196,5 +246,7 @@ apiRoutes.get(
     }),
   }
 )
+
+apiRoutes.use(uploadRoutes)
 
 export default apiRoutes

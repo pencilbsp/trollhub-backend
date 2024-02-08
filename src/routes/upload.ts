@@ -1,96 +1,62 @@
+import { file } from "bun"
 import Elysia, { t } from "elysia"
-
-import prisma from "@/utils/prisma"
-import { decrypt, filterStringsStartingWithSamePrefix, reversImageUrl } from "@/utils/fuhu/client"
+import { join, basename } from "path"
+import { STATIC_DIR } from "@/configs"
 
 const uploadRoutes = new Elysia({ prefix: "/upload" })
 
+async function saveSegment(segmentPath: string, data?: File) {
+  if (data) {
+    await Bun.write(segmentPath, data)
+    return basename(segmentPath)
+  }
+}
+
 uploadRoutes.post(
-  "/images",
-  async ({ body }) => {
+  "/segment",
+  async ({ query, body }) => {
     try {
-      if (!body.data) throw new Error("Không có gì để upload")
+      const videoDir = join(STATIC_DIR, "m3u8", query.fid)
+      const m3u8Path = join(videoDir, "index.m3u8")
 
-      const { pathname } = new URL(body.url)
-      const slug = pathname.split("/")[2].replaceAll("_", "/").replaceAll("-", "+") + "=="
-      const payload = decrypt(slug, "--KpQG3w0km3imY", "b63e541bc9ece19a").split("|")
-      const fid = payload[0]
+      const f = file(m3u8Path)
+      const m3u8Content = await f.text()
+      const segments = m3u8Content.match(/#EXTINF:\d+(?:.\d+|),\n.*?$/gm)
+      if (!segments) throw new Error("Không thể phân tích tệp tin m3u8")
 
-      const chapter = await prisma.chapter.findFirst({ where: { fid } })
-      if (!chapter) throw new Error("Nội dung này không tồn tại")
+      const segment = segments[Number(body.fragIndex)]
+      const currentUrl = segment.split("\n")[1].trim()
 
-      const hashs = body.data.sv1.webp
-      const imageUrls = []
-        .concat(...hashs)
-        .map((hash) => reversImageUrl(decrypt(hash, "f9a0364a9df71b0", "fb047231a480949f")))
+      const segmentPath = join(videoDir, body.fragIndex + ".ts")
+      const segmentFile = await saveSegment(segmentPath, body.segment)
 
-      const [images] = filterStringsStartingWithSamePrefix(imageUrls)
+      await Bun.write(m3u8Path, m3u8Content.replace(currentUrl, segmentFile || body.redirectUrl))
 
-      await prisma.chapter.update({
-        where: {
-          id: chapter.id,
-        },
-        data: {
-          status: "ready",
-          images: images,
-        },
-      })
+      // const segmentIndex = m3u8Content.indexOf(body.segmentUrl)
 
-      const message = `Đã đăng thành công ${images.length} cho chương ${chapter.fid}`
-      console.log(message)
-      return { message }
+      // if (segmentIndex > -1) {
+      //   const segmentPath = join(videoDir, segmentIndex + ".ts")
+      //   const segmentFile = await saveSegment(segmentPath, body.segment)
+      //   await Bun.write(m3u8Path, m3u8Content.replace(body.segmentUrl, segmentFile || body.redirectUrl))
+      // }
     } catch (error: any) {
-      console.log(error)
-      return { message: error.message }
+      return {
+        error: {
+          message: error.message,
+        },
+      }
     }
   },
   {
-    body: t.Object({
-      url: t.String(),
+    query: t.Object({
       fid: t.String(),
-      data: t.Object({
-        sv1: t.Object({
-          webp: t.Array(t.Any()),
-          jpeg: t.Array(t.Any()),
-        }),
-      }),
     }),
-  }
-)
-
-uploadRoutes.post(
-  "/image",
-  async ({ body }) => {
-    try {
-      const fileName = body.image.name
-      const buffer = await body.image.arrayBuffer()
-      await Bun.write(`public/images/test/${fileName}`, buffer)
-    } catch (error: any) {
-      console.log(error)
-      return { message: error.message }
-    }
-  },
-  {
     body: t.Object({
-      image: t.File(),
-    }),
-  }
-)
-
-uploadRoutes.post(
-  "/image2",
-  async ({ body }) => {
-    try {
-      console.log(body.url, body.data)
-    } catch (error: any) {
-      console.log(error)
-      return { message: error.message }
-    }
-  },
-  {
-    body: t.Object({
-      data: t.String(),
       url: t.String(),
+      fragIndex: t.String(),
+      segmentUrl: t.String(),
+      redirectUrl: t.String(),
+      segment: t.Optional(t.File()),
     }),
   }
 )

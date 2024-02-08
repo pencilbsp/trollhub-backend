@@ -15,7 +15,7 @@ console.log("Start server on port: 3001")
 new Elysia()
   .use(cors())
   .use(html())
-  .use(staticPlugin())
+  .use(staticPlugin({ alwaysStatic: false }))
   .use(apiRoutes)
   .use(hlsRoutes)
   .use(imageRoutes)
@@ -23,6 +23,6 @@ new Elysia()
   .use(redirectRoute)
   .use(webSocket)
   .get("/", () => {
-    return "Hello Elysia"
+    return "Hello Fuhu"
   })
   .listen(3001)
