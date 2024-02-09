@@ -19,7 +19,7 @@ const VALID_FUHU_URL = /^\/(?<type>(?:movie|comic|novel|channel))\/(?:.*?_|)(?<f
 const apiRoutes = new Elysia({ prefix: "/api" })
 
 apiRoutes.get(
-  "/seek",
+  "/seekable",
   async ({ query }) => {
     try {
       const videoDir = join(STATIC_DIR, "m3u8", query.fid)
@@ -40,16 +40,12 @@ apiRoutes.get(
         to += parseFloat(time)
         index++
 
-        if (
-          segment.includes("/sile/") ||
-          segment.includes("tsredirector") ||
-          segment.includes("storage.googleapis.com")
-        ) {
+        if (segment.includes("/sile/") || segment.includes("redirector") || segment.includes("tsredirector")) {
           break
         }
       }
 
-      return { to: Math.floor(to) }
+      return { to: Math.floor(to) - 10 }
     } catch (error: any) {
       return {
         to: 0,

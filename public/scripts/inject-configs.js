@@ -8,8 +8,38 @@ class FuckFuhu {
   host = window.host
   socket = window.socket
   embedUrl = window.location.href
-  constructor(fid) {
+  constructor(fid, elmId) {
     this.fid = fid
+    this.videoElm = document.getElementById(elmId)
+
+    if (this.videoElm) {
+      this.playerElm = this.videoElm.parentNode
+      this.videoElm.addEventListener("loadedmetadata", this.seekTo)
+    }
+  }
+
+  seekTo = async () => {
+    if (!this.videoElm) return
+    const to = await this.seekable()
+    if (to < 30) return
+
+    const time = this.secondsToHMS(to)
+    const confirmation = window.confirm(`Tiếp tục tại ${time}`)
+    const autoplayable = this.videoElm.play()
+
+    if (confirmation) {
+      autoplayable
+        .then(() => {
+          this.videoElm.currentTime = to
+        })
+        .catch((_) => {
+          this.videoElm.muted = true
+          this.videoElm.play()
+          this.videoElm.currentTime = to
+        })
+    }
+
+    this.videoElm.removeEventListener("loadedmetadata", this.seekTo)
   }
 
   setSegments(response = {}) {
@@ -122,14 +152,26 @@ class FuckFuhu {
       alert(error.message)
     }
   }
-}
 
-if ("arraybuffer" === a.responseType) {
-  o = t.response
-  l = o.byteLength
-  const isSile = u.url.includes("/sile/")
-  fuckFuhu.uploadSegment(a.url, u.url, a.frag._url, isSile ? o : null)
-} else {
-  o = t.responseText
-  l = o.length
+  secondsToHMS(seconds) {
+    let hours = Math.floor(seconds / 3600)
+    let minutes = Math.floor((seconds % 3600) / 60)
+    let remainingSeconds = seconds % 60
+
+    hours = hours < 10 ? "0" + hours : hours
+    minutes = minutes < 10 ? "0" + minutes : minutes
+    remainingSeconds = seconds < 10 ? "0" + seconds : seconds
+
+    return hours + ":" + minutes + ":" + remainingSeconds
+  }
+
+  async seekable() {
+    try {
+      const response = await fetch(`https://${this.host}/api/seekable?fid=${this.fid}`)
+      const data = await response.json()
+      return data.to
+    } catch (error) {
+      return 0
+    }
+  }
 }
