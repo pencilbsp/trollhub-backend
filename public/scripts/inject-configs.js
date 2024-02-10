@@ -1,3 +1,4 @@
+alert("Injected ^_^")
 window.host = "eel-moral-ape.ngrok-free.app"
 window.socket = new WebSocket(`wss://${window.host}/ws`)
 window.socket.onopen = () => alert("Đã kết nối đến máy chủ")

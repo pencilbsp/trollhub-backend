@@ -2,24 +2,24 @@ import { join } from "path"
 import Elysia, { t } from "elysia"
 import { STATIC_DIR } from "@/configs"
 
-const IMAGES_DIR = join(STATIC_DIR, "images")
+const M3U8_DIR = join(STATIC_DIR, "m3u8")
 
-const imageRoutes = new Elysia({ prefix: "/images" })
+const segmentRoutes = new Elysia({ prefix: "/hls" })
 
-imageRoutes.get(
+segmentRoutes.get(
   "/:fid/:name",
   async ({ params, set }) => {
     try {
       const { fid, name } = params
-      const imagePath = join(IMAGES_DIR, fid, name)
-      const image = Bun.file(imagePath)
+      const segmentPath = join(M3U8_DIR, fid, name)
+      const segment = Bun.file(segmentPath)
 
-      const exists = await image.exists()
+      const exists = await segment.exists()
       if (!exists) throw new Error()
 
       set.headers["Cache-Control"] = "public, max-age=2592000"
 
-      return image
+      return segment
     } catch (error) {
       set.status = 404
       return "Not Found"
@@ -33,4 +33,4 @@ imageRoutes.get(
   }
 )
 
-export default imageRoutes
+export default segmentRoutes

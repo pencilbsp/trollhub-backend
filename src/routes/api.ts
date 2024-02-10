@@ -231,7 +231,6 @@ apiRoutes.get(
         })
       return { images }
     } catch (error) {
-      console.log(error)
       return { images: [] }
     }
   },
