@@ -1,4 +1,5 @@
 import { join } from "path"
+import { existsSync } from "fs"
 import Elysia, { t } from "elysia"
 import { readdir } from "fs/promises"
 
@@ -18,6 +19,13 @@ const VALID_FUHU_URL = /^\/(?<type>(?:movie|comic|novel|channel))\/(?:.*?_|)(?<f
 
 const apiRoutes = new Elysia({ prefix: "/api" })
 
+const isAvailable = (content: string) =>
+  content.includes("/sile/") ||
+  content.includes("redirector") ||
+  content.includes("tsredirector") ||
+  content.includes("storage.googleapis.com")
+
+// /seekable
 apiRoutes.get(
   "/seekable",
   async ({ query }) => {
@@ -40,12 +48,7 @@ apiRoutes.get(
         to += parseFloat(time)
         index++
 
-        if (
-          segment.includes("/sile/") ||
-          segment.includes("redirector") ||
-          segment.includes("tsredirector") ||
-          segment.includes("storage.googleapis.com")
-        ) {
+        if (isAvailable(segment)) {
           break
         }
       }
@@ -67,6 +70,7 @@ apiRoutes.get(
   }
 )
 
+// /request-content
 apiRoutes.post(
   "/request-content",
   async ({ body, set }) => {
@@ -132,6 +136,7 @@ apiRoutes.post(
   }
 )
 
+// /ajax-logger
 apiRoutes.post(
   "/ajax-logger",
   async ({ body }) => {
@@ -166,6 +171,7 @@ apiRoutes.post(
   }
 )
 
+// /key-logger
 apiRoutes.post(
   "/key-logger",
   ({ body }) => {
@@ -187,6 +193,7 @@ apiRoutes.post(
   }
 )
 
+// /keys-logger
 apiRoutes.post(
   "/keys-logger",
   async ({ body }) => {
@@ -214,6 +221,7 @@ apiRoutes.post(
   }
 )
 
+// /fttps:webp/:fid
 apiRoutes.get(
   "/fttps:webp/:fid",
   async ({ params }) => {
@@ -243,6 +251,33 @@ apiRoutes.get(
     params: t.Object({
       fid: t.String(),
       webp: t.Optional(t.String()),
+    }),
+  }
+)
+
+// /get-m3u8-available
+apiRoutes.get(
+  "/get-m3u8-available",
+  async ({ set, query }) => {
+    try {
+      const m3u8Path = join(STATIC_DIR, "m3u8", query.fid, "index.m3u8")
+      if (!existsSync(m3u8Path)) throw new Error()
+
+      const file = Bun.file(m3u8Path)
+      const m3u8Content = await file.text()
+
+      if (isAvailable(m3u8Content)) throw new Error()
+
+      return { m3u8: `/public/m3u8/${query.fid}/index.m3u8` }
+    } catch (error) {
+      console.log(error)
+      set.status = 404
+      return { error: { message: "Video is not available" } }
+    }
+  },
+  {
+    query: t.Object({
+      fid: t.String(),
     }),
   }
 )
