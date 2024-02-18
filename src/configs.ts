@@ -1,6 +1,7 @@
 import { join } from "path"
 
 export const TARGET_URL = process.env.TARGET_URL!
+export const FUHURIP_SERVER = process.env.FUHURIP_SERVER!
 
 export const REDIS_URL = process.env.REDIS_URL
 export const REDIS_PASS = process.env.REDIS_PASS

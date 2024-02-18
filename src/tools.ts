@@ -3,6 +3,7 @@ import { existsSync, rmSync } from "fs"
 import { writeFile } from "fs/promises"
 
 import prisma from "./utils/prisma"
+import { FUHURIP_SERVER } from "./configs"
 import extractVideo from "./utils/fuhu/video"
 import { ChapterStatus, ContentType } from "@prisma/client"
 import { COMIC_VERSION, comicParser, createEmbedUrl, novelParser } from "./utils/fuhu/client"
@@ -86,11 +87,23 @@ setInterval(async () => {
       const m3u8Content = await extractVideo(chapter.fid)
       const m3u8Path = join(M3U8_DIR, chapter.id + ".m3u8")
       await writeFile(m3u8Path, m3u8Content)
+
       await prisma.chapter.update({
         where: {
           id: currentId,
         },
         data: { status: ChapterStatus.ready },
+      })
+
+      await fetch(`${FUHURIP_SERVER}/upload/m3u8`, {
+        method: "POST",
+        body: JSON.stringify({
+          id: chapter.id,
+          content: m3u8Content,
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
       })
     }
 

@@ -61,4 +61,33 @@ uploadRoutes.post(
   }
 )
 
+uploadRoutes.post(
+  "/m3u8",
+  async ({ body }) => {
+    try {
+      const { id, content: m3u8Content } = body
+      if (!m3u8Content.startsWith("#EXTM3U")) throw new Error("M3U8 content is invalid")
+
+      const m3u8Path = join(STATIC_DIR, "m3u8", id + ".m3u8")
+
+      await Bun.write(m3u8Path, m3u8Content)
+
+      return { success: true }
+    } catch (error: any) {
+      return {
+        success: false,
+        error: {
+          message: error.message,
+        },
+      }
+    }
+  },
+  {
+    body: t.Object({
+      id: t.String(),
+      content: t.String(),
+    }),
+  }
+)
+
 export default uploadRoutes
