@@ -81,10 +81,10 @@ const hlsRoutes = new Elysia({ prefix: "/hls" })
       if (contentLenght) set.headers["Content-Lenght"] = contentLenght
 
       return new Stream(response)
-    } catch (error) {
+    } catch (error: any) {
       console.log(error)
       set.status = 404
-      return
+      return error.message
     }
   })
 
