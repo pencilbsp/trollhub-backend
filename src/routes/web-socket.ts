@@ -3,6 +3,7 @@ import { join } from "path"
 import { $, file } from "bun"
 import { existsSync } from "fs"
 import { Elysia } from "elysia"
+import { randomUUID } from "crypto"
 
 import { STATIC_DIR } from "@/configs"
 import { decode } from "@/utils/base64"
@@ -22,18 +23,29 @@ function getFid(urlBase64?: string) {
   }
 }
 
-const loadSegment = (ws: any, payload: { url: string; headers?: Record<string, string> }) => {
-  ws.send(
-    JSON.stringify({
-      action: "load_segment",
-      payload: {
-        url: payload.url,
-        init: {
-          headers: payload.headers,
-        },
-      },
-    })
-  )
+// const loadSegment = (ws: any, payload: { url: string; headers?: Record<string, string> }) => {
+//   ws.send(
+//     JSON.stringify({
+//       action: "load_segment",
+//       payload: {
+//         url: payload.url,
+//         init: {
+//           headers: payload.headers,
+//         },
+//       },
+//     })
+//   )
+// }
+
+const sourceLogger = async (url: string, source: string) => {
+  try {
+    const sourceDir = join(STATIC_DIR, "source")
+    if (!existsSync(sourceDir)) await $`mkdir -p ${sourceDir}`
+
+    const htmlPath = join(sourceDir, randomUUID())
+
+    await Bun.write(htmlPath, `<!-- ${Date.now()} -->\n<!-- ${url} -->\n${source}`)
+  } catch (error) {}
 }
 
 const webSocket = new Elysia().ws("/ws", {
@@ -94,9 +106,12 @@ const webSocket = new Elysia().ws("/ws", {
           await Bun.write(m3u8Path, m3u8Content.replaceAll(payload.keyUrl, `data:text/plain;base64,${base64Key}`))
         }
 
-        if (action === "parse_url") {
-          // const seg = payload.data.formats.enc.seg.length
-          // console.log("[parse_url]", payload.data.formats.enc.seg.length)
+        if (action === "log_source") {
+          await sourceLogger(payload.url, payload.source)
+          // console.log("===========[Log source]===========")
+          // console.log("[+] URL:", payload.url)
+          // console.log("[+] SOURCE:", payload.source)
+          // console.log("===========[Log source end]===========\n")
         }
 
         if (action === "log_images") {

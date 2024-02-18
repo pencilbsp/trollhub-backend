@@ -40,7 +40,12 @@ apiRoutes.get(
         to += parseFloat(time)
         index++
 
-        if (segment.includes("/sile/") || segment.includes("redirector") || segment.includes("tsredirector")) {
+        if (
+          segment.includes("/sile/") ||
+          segment.includes("redirector") ||
+          segment.includes("tsredirector") ||
+          segment.includes("storage.googleapis.com")
+        ) {
           break
         }
       }
