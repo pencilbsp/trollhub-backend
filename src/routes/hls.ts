@@ -70,9 +70,7 @@ const hlsRoutes = new Elysia({ prefix: "/hls" })
   .get("/segment/:slug", async ({ params, set }) => {
     try {
       const uri = base64Decode(params.slug.replaceAll("-", "/"))
-      const response = await fetch(uri)
-
-      const stream = new Stream(response)
+      const response = await fetch(uri, { headers: { "Accept-Encoding": "identity" } })
 
       set.headers["Content-Type"] = "video/MP2T"
 
@@ -82,7 +80,7 @@ const hlsRoutes = new Elysia({ prefix: "/hls" })
       const contentLenght = response.headers.get("Content-Lenght")
       if (contentLenght) set.headers["Content-Lenght"] = contentLenght
 
-      return stream
+      return new Stream(response)
     } catch (error) {
       console.log(error)
       set.status = 404
