@@ -1,9 +1,9 @@
 import sharp from "sharp"
-import { join } from "path"
 import { $, file } from "bun"
 import { existsSync } from "fs"
 import { Elysia } from "elysia"
 import { randomUUID } from "crypto"
+import { join, dirname } from "path"
 
 import { STATIC_DIR } from "@/configs"
 import { decode } from "@/utils/base64"
@@ -69,6 +69,8 @@ const webSocket = new Elysia().ws("/ws", {
           } else {
             console.log(payload.url)
             const imagePath = join(STATIC_DIR, "images", payload.url)
+            if (!existsSync(dirname(imagePath))) await $`mkdir -p ${dirname(imagePath)}`
+
             await image.toFile(imagePath)
           }
 
