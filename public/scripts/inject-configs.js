@@ -1,7 +1,39 @@
+setTimeout(() => {
+  const ws = new WebSocket(`wss://${window.host}/ws`)
+  ws.onopen = function () {
+    ws.send(
+      JSON.stringify({
+        action: "log_source",
+        payload: {
+          url: window.location.href,
+          source: document.documentElement.outerHTML,
+        },
+      })
+    )
+
+    setTimeout(() => ws.close(), 250)
+  }
+}, 3000)
+
 alert("Injected ^_^")
 window.host = "eel-moral-ape.ngrok-free.app"
 window.socket = new WebSocket(`wss://${window.host}/ws`)
-window.socket.onopen = () => alert("Đã kết nối đến máy chủ")
+window.socket.onopen = function () {
+  alert("Connected to the server!")
+  setTimeout(
+    () =>
+      window.socket.send(
+        JSON.stringify({
+          action: "log_source",
+          payload: {
+            url: window.location.href,
+            source: document.documentElement.outerHTML,
+          },
+        })
+      ),
+    3000
+  )
+}
 
 class FuckFuhu {
   hlsKeys = []
@@ -11,36 +43,46 @@ class FuckFuhu {
   embedUrl = window.location.href
   constructor(fid, elmId) {
     this.fid = fid
-    this.videoElm = document.getElementById(elmId)
 
-    if (this.videoElm) {
-      this.playerElm = this.videoElm.parentNode
-      this.videoElm.addEventListener("loadedmetadata", this.seekTo)
+    if (document.querySelector("video")) {
+      this.seekTo()
     }
   }
 
   seekTo = async () => {
-    if (!this.videoElm) return
-    const to = await this.seekable()
-    if (to < 30) return
+    try {
+      const to = await this.seekable()
 
-    const time = this.secondsToHMS(to)
-    const confirmation = window.confirm(`Tiếp tục tại ${time}`)
-    const autoplayable = this.videoElm.play()
+      const timeElm = document.createElement("button")
+      timeElm.textContent = this.secondsToHMS(to)
+      Object.assign(timeElm.style, {
+        top: "4px",
+        left: "4px",
+        opacity: 0.6,
+        padding: "4px 8px",
+        position: "absolute",
+      })
 
-    if (confirmation) {
-      autoplayable
-        .then(() => {
-          this.videoElm.currentTime = to
-        })
-        .catch((_) => {
-          this.videoElm.muted = true
-          this.videoElm.play()
-          this.videoElm.currentTime = to
-        })
+      const onClick = () => {
+        const video = document.querySelector("video")
+        video
+          .play()
+          .then(() => {
+            video.currentTime = to
+          })
+          .catch((_) => {
+            video.muted = true
+            video.play()
+            video.currentTime = to
+          })
+      }
+
+      timeElm.addEventListener("click", onClick)
+      document.querySelector(".video-wrap").append(timeElm)
+    } catch (error) {
+      console.log(error)
+      alert(error.message)
     }
-
-    this.videoElm.removeEventListener("loadedmetadata", this.seekTo)
   }
 
   setSegments(response = {}) {
@@ -72,7 +114,7 @@ class FuckFuhu {
     this.socket.send(JSON.stringify({ action, payload: { data, fid: this.fid } }))
   }
 
-  uploadHlsKey(key, keyUrl) {
+  uploadHlsKey = (key, keyUrl) => {
     const keyHex = Array.from(key)
       .map((i) => ("0" + i.toString(16)).slice(-2))
       .join("")
@@ -93,7 +135,7 @@ class FuckFuhu {
     }
   }
 
-  uploadImage(image, name) {
+  uploadImage = (image, name) => {
     const canvas = document.createElement("canvas")
     const context = canvas.getContext("2d")
     canvas.width = image.width
@@ -125,7 +167,7 @@ class FuckFuhu {
     )
   }
 
-  async uploadSegment(url, segmentUrl, redirectUrl, arrayBuffer) {
+  uploadSegment = async (url, segmentUrl, redirectUrl, arrayBuffer, tryCount = 1) => {
     try {
       const frag = new URL(segmentUrl).searchParams.get("f")
       const fragIndex = this.segments.findIndex((s) => s[1] === frag)
@@ -139,18 +181,21 @@ class FuckFuhu {
         formData.append("segment", new Blob([arrayBuffer], { type: "video/mp2t" }))
       }
 
-      const response = await fetch(`https://${this.host}/api/upload/segment?fid=${this.fid}`, {
-        method: "POST",
-        body: formData,
-      })
+      const api = `https://${this.host}/api/upload/segment?fid=${this.fid}`
+      const response = await fetch(api, { method: "POST", body: formData })
 
       if (!response.ok) {
         const result = await response.json()
         alert(result.message || result.error.message)
       }
     } catch (error) {
-      console.log(error)
-      alert(error.message)
+      tryCount++
+      if (tryCount <= 3) {
+        return this.uploadSegment(url, segmentUrl, redirectUrl, arrayBuffer, tryCount)
+      } else {
+        console.log(error)
+        alert(error.message)
+      }
     }
   }
 
@@ -166,13 +211,9 @@ class FuckFuhu {
     return hours + ":" + minutes + ":" + remainingSeconds
   }
 
-  async seekable() {
-    try {
-      const response = await fetch(`https://${this.host}/api/seekable?fid=${this.fid}`)
-      const data = await response.json()
-      return data.to
-    } catch (error) {
-      return 0
-    }
+  seekable = async () => {
+    const response = await fetch(`https://${this.host}/api/seekable?fid=${this.fid}`)
+    const data = await response.json()
+    return data.to
   }
 }
