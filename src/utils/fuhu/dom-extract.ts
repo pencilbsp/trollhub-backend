@@ -1,6 +1,7 @@
 import jsdom from "jsdom"
 import { parse } from "date-fns"
 import { ContentStatus, ContentType, Creator } from "@prisma/client"
+import { TARGET_URL } from "@/configs"
 
 const { JSDOM } = jsdom
 
@@ -12,7 +13,7 @@ type Chapter = {
   mobileOnly: boolean
 }
 
-const BASE_FUHU_URL = "https://fuhuzz.net"
+const BASE_FUHU_URL = TARGET_URL
 const DEFAULT_STATUS = ["Đang cập nhật", "Đang xuất bản"]
 const INFO_SELECTOR = "body > div.detail-container.container.mt60 > div > div.col-sm-8 > div.row.mt10"
 
@@ -67,7 +68,7 @@ export const extractFuhuCreator = async (url: string, headers?: Headers) => {
   const cover = coverElm?.getAttribute("data-original")
   const avatar = thumbElm?.getAttribute("data-original")
 
-  return { bio: bio?.trim(), userName: cname, email, name, cover, avatar, fid }
+  return { bio: bio?.trim(), userName: cname, email: email || cname.substring(1) + "@fuhuzz.rip", name, cover, avatar, fid }
 }
 
 export function extractFuhuFirstContent(contentElm: Element, channel?: Creator, gird?: boolean) {
@@ -85,8 +86,8 @@ export function extractFuhuFirstContent(contentElm: Element, channel?: Creator, 
   const type = typeClass?.contains("fa-book-open")
     ? ContentType.novel
     : typeClass?.contains("fa-images")
-    ? ContentType.comic
-    : ContentType.movie
+      ? ContentType.comic
+      : ContentType.movie
 
   const status = statusElm?.classList.contains("complete") ? ContentStatus.complete : ContentStatus.updating
 
@@ -146,12 +147,12 @@ export const extractFuhuContent = async (url: string, type: ContentType, headers
   // https://fuhuzz.com/content/subitems?mid=Jmc5FwEM&type=all_json&host=fuhuzz.com
   response = await fetch(
     BASE_FUHU_URL +
-      "/content/subitems?" +
-      new URLSearchParams({
-        mid: mid,
-        type: "all_json",
-        host: new URL(BASE_FUHU_URL).hostname,
-      }),
+    "/content/subitems?" +
+    new URLSearchParams({
+      mid: mid,
+      type: "all_json",
+      host: new URL(BASE_FUHU_URL).hostname,
+    }),
     {
       headers,
     }

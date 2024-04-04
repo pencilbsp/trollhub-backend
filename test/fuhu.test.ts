@@ -1,14 +1,23 @@
 import { expect, test } from "bun:test"
-import { createEmbedUrl, comicParser, COMIC_VERSION } from "../src/utils/fuhu/client"
+import { createEmbedUrl, comicParser, COMIC_VERSION, decrypt } from "../src/utils/fuhu/client"
 import { extractFuhuContent, extractFuhuCreator } from "../src/utils/fuhu/dom-extract"
 import extractVideo from "../src/utils/fuhu/video"
 
 // https://fuhuzz.com/comic-chapter/nhan-vat-phan-dien-nay-co-chut-luong-tam-nhung-khong-nhieu-chapter-183_A0MmlQgV.html
-const TEST_COMIC_ID = "76QpDQ3a"
+const TEST_COMIC_ID = "HR7rCwyg"
 const TEST_VIDEO_ID = "opD7YQ0e"
 const TEST_CHANNEL_URL = "https://fuhuzz.net/channel/truyen30s"
 const TEST_NOVEL_URL = "https://fuhuzz.net/novel-chapter/chuong-1_uzkjjAPe.html"
 const TEST_URL = "https://fuhuzz.net/movie/nang-hau-an-danh-2023-sao-chai-delivery_gywN6grP.html"
+const TEST_EMBED_URL =
+  "https://idoitmyself.xyz/embed/TgBQCKyeIryDaFsHAJJmfCLKKscuXlsJFPqkcVyLoJnPuZYOwTf0kfFE0wIdzMC8wLtam5BwLvX_4VBaYN5AxQ"
+
+// test("Extract Embed Data", () => {
+//   const path = TEST_EMBED_URL.split("/embed/")[1]
+//   const payload = path.replaceAll("_", "/").replaceAll("-", "+") + "="
+//   const data = decrypt(payload, "--KpQG3w0km3imY", "b63e541bc9ece19a")
+//   console.log(data)
+// })
 
 // test("Extract Fuhu Content", async () => {
 //   const content = await extractFuhuContent(TEST_URL, "movie")
@@ -19,11 +28,15 @@ const TEST_URL = "https://fuhuzz.net/movie/nang-hau-an-danh-2023-sao-chai-delive
 //   expect(content.chapters).toBeArray()
 // })
 
-// test("Extract Fuhu Video", async () => {
-//   const m3u8 = await extractVideo("vwWKAQjj")
-//   console.log(m3u8)
-//   expect(m3u8).toBeString()
-// }, { timeout: 60000 })
+test(
+  "Extract Fuhu Video",
+  async () => {
+    const m3u8 = await extractVideo("vwWKAQjj")
+    console.log(m3u8)
+    expect(m3u8).toBeString()
+  },
+  { timeout: 60000 }
+)
 
 // test("Extract Fuhu Creator", async () => {
 //   const creator = await extractFuhuCreator(TEST_CHANNEL_URL)
@@ -33,7 +46,6 @@ const TEST_URL = "https://fuhuzz.net/movie/nang-hau-an-danh-2023-sao-chai-delive
 
 test("Decrypt Fuhu Comic", async () => {
   const comicUrl = createEmbedUrl(TEST_COMIC_ID, COMIC_VERSION)
-  console.log(comicUrl)
   expect(comicUrl).toBeString()
   const imageUrls = await comicParser(comicUrl)
   expect(imageUrls).toBeArray()

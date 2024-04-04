@@ -21,7 +21,7 @@ type Content = {
   status: ContentStatus
 }
 
-async function loadDiscoverContent(categoryPath: string, idx: number) {
+export async function loadDiscoverContent(categoryPath: string, idx: number) {
   const contents: Content[] = []
 
   const genre = categoryPath.split("_")[1].split(".")[0]
@@ -58,7 +58,7 @@ async function loadDiscoverContent(categoryPath: string, idx: number) {
   return contents
 }
 
-async function loadDiscoverContents(categoryPath: string) {
+export async function loadDiscoverContents(categoryPath: string) {
   let index = 0
   let latestCount = 10
 
@@ -69,9 +69,10 @@ async function loadDiscoverContents(categoryPath: string) {
   }
 }
 
-async function insertContent(url: string, type: ContentType, status: ContentStatus) {
+export async function insertContent(url: string, type: ContentType, status: ContentStatus) {
   try {
     const fid = url.split("_")[1].split(".")[0]
+    console.log(fid)
     let newContent = await prisma.content.findFirst({ where: { fid } })
 
     const content = await extractFuhuContent(url, type, headers)
@@ -80,6 +81,7 @@ async function insertContent(url: string, type: ContentType, status: ContentStat
 
     const keywords = slug(content.title!, { replacement: " " })
 
+    // console.log(newContent)
     if (newContent) {
       // console.log(" [+] Đang cập nhật nội dung:", content.title)
       // newContent.status !== "complete" &&
