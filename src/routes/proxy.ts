@@ -8,7 +8,7 @@ const IMAGES_DIR = join(STATIC_DIR, "images");
 const proxyRoutes = new Elysia({ prefix: "/proxy" });
 
 proxyRoutes.get(
-  "/:tagName/:fid/:slug",
+  "/:fid/:tagName/:slug",
   async ({ params: { fid, slug, tagName }, set, query: { s } }) => {
     try {
       const chapterDir = join(IMAGES_DIR, fid);
