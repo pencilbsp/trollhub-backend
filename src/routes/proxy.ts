@@ -34,6 +34,7 @@ proxyRoutes.get(
       return Bun.file(filePath);
     } catch (error) {
       set.status = 404;
+      set.headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
       return "Not Found";
     }
   },
