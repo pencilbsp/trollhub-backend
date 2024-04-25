@@ -1,66 +1,67 @@
-import { join } from "path"
-import { existsSync } from "fs"
-import Elysia, { t } from "elysia"
-import { readdir } from "fs/promises"
+import { existsSync } from "fs";
+import Elysia, { t } from "elysia";
+import { join, basename } from "path";
+import { readdir } from "fs/promises";
 
-import uploadRoutes from "./upload"
+import uploadRoutes from "./upload";
 
-import prisma from "@/utils/prisma"
-import { STATIC_DIR } from "@/configs"
-import { hexToString } from "@/utils/base64"
-import upsertContents from "@/utils/upsert-contents"
-import { getChannelContents } from "@/utils/fuhu/crawl"
-import decryptImages from "@/utils/fuhu/decrypt-images"
-import { extractFuhuCreator } from "@/utils/fuhu/dom-extract"
-import decryptHls, { hlsLogger } from "@/utils/fuhu/decrypt-hls"
+import prisma from "@/utils/prisma";
+import { STATIC_DIR } from "@/configs";
+import { hexToString } from "@/utils/base64";
+import upsertContents from "@/utils/upsert-contents";
+import { getChannelContents } from "@/utils/fuhu/crawl";
+import decryptImages from "@/utils/fuhu/decrypt-images";
+import { extractFuhuCreator } from "@/utils/fuhu/dom-extract";
+import decryptHls, { hlsLogger } from "@/utils/fuhu/decrypt-hls";
 
-const SUPPORTED_FUHU_TYPES = ["comic", "novel", "movie", "channel"]
-const VALID_FUHU_URL = /^\/(?<type>(?:movie|comic|novel|channel))\/(?:.*?_|)(?<fid>\w+)(?:\.html|)$/
+const SUPPORTED_FUHU_TYPES = ["comic", "novel", "movie", "channel"];
+const VALID_FUHU_URL =
+  /^\/(?<type>(?:movie|comic|novel|channel))\/(?:.*?_|)(?<fid>\w+)(?:\.html|)$/;
 
-const apiRoutes = new Elysia({ prefix: "/api" })
+const apiRoutes = new Elysia({ prefix: "/api" });
 
 const isAvailable = (content: string) =>
   content.includes("/sile/") ||
   content.includes("redirector") ||
   content.includes("tsredirector") ||
-  content.includes("storage.googleapis.com")
+  content.includes("storage.googleapis.com");
 
 // /seekable
 apiRoutes.get(
   "/seekable",
   async ({ query }) => {
     try {
-      const videoDir = join(STATIC_DIR, "m3u8", query.fid)
-      const m3u8Path = join(videoDir, "index.m3u8")
+      const videoDir = join(STATIC_DIR, "m3u8", query.fid);
+      const m3u8Path = join(videoDir, "index.m3u8");
 
-      const f = Bun.file(m3u8Path)
-      const m3u8Content = await f.text()
-      const segments = m3u8Content.match(/#EXTINF:\d+(?:.\d+|),\n.*?$/gm)
-      if (!segments) throw new Error("Không thể phân tích tệp tin m3u8")
+      const f = Bun.file(m3u8Path);
+      const m3u8Content = await f.text();
+      const segments = m3u8Content.match(/#EXTINF:\d+(?:.\d+|),\n.*?$/gm);
+      if (!segments) throw new Error("Không thể phân tích tệp tin m3u8");
 
-      let to = 0
-      let index = 0
+      let to = 0;
+      let index = 0;
       while (true) {
-        const segment = segments[index]
-        if (!segment) break
+        const segment = segments[index];
+        if (!segment) break;
 
-        const time = segment.match(/#EXTINF:(\d+(?:.\d+|)),\n/)![1]
-        to += parseFloat(time)
-        index++
+        const time = segment.match(/#EXTINF:(\d+(?:.\d+|)),\n/)![1];
+        to += parseFloat(time);
+        index++;
 
         if (isAvailable(segment)) {
-          break
+          break;
         }
       }
 
-      return { to: Math.floor(to) - 10 }
+      return { to: Math.floor(to) - 10 };
     } catch (error: any) {
       return {
         to: 0,
         error: {
           message: error.message,
         },
-      }
+      };
     }
   },
   {
@@ -68,23 +69,24 @@ apiRoutes.get(
       fid: t.String(),
     }),
   }
-)
+);
 
 // /request-content
 apiRoutes.post(
   "/request-content",
   async ({ body, set }) => {
     try {
-      const fuhuUrl = new URL(body.url)
-      const { type, fid } = VALID_FUHU_URL.exec(fuhuUrl.pathname)?.groups || {}
-      if (!type || !fid) throw new Error("Url không không hợp lệ")
+      const fuhuUrl = new URL(body.url);
+      const { type, fid } = VALID_FUHU_URL.exec(fuhuUrl.pathname)?.groups || {};
+      if (!type || !fid) throw new Error("Url không không hợp lệ");
 
-      if (!SUPPORTED_FUHU_TYPES.includes(type)) throw new Error("Nội dung không được hỗ trợ")
+      if (!SUPPORTED_FUHU_TYPES.includes(type))
+        throw new Error("Nội dung không được hỗ trợ");
 
       if (type === "channel") {
-        const userName = "@" + fid
-        let channel = await prisma.creator.findUnique({ where: { userName } })
-        const channelMetatdata = await extractFuhuCreator(body.url)
+        const userName = "@" + fid;
+        let channel = await prisma.creator.findUnique({ where: { userName } });
+        const channelMetatdata = await extractFuhuCreator(body.url);
 
         if (!channel) {
           channel = await prisma.creator.create({
@@ -97,7 +99,7 @@ apiRoutes.post(
               avatar: channelMetatdata.avatar,
               userName: channelMetatdata.userName,
             },
-          })
+          });
         } else {
           await prisma.creator.update({
             where: {
@@ -109,24 +111,26 @@ apiRoutes.post(
               cover: channelMetatdata.cover,
               avatar: channelMetatdata.avatar,
             },
-          })
+          });
         }
 
-        const channelContents = await getChannelContents(body.url, channel)
+        const channelContents = await getChannelContents(body.url, channel);
 
-        await upsertContents(channelContents)
-        return { message: `${channelContents.length} nội dung đã được cập nhật` }
+        await upsertContents(channelContents);
+        return {
+          message: `${channelContents.length} nội dung đã được cập nhật`,
+        };
       } else {
         // const content = await prisma.content.findFirst({ where: { fid } })
-        return { message: "Tính năng này đang được phát triển" }
+        return { message: "Tính năng này đang được phát triển" };
       }
     } catch (error: any) {
-      set.status = 500
+      set.status = 500;
       return {
         error: {
           message: error.message,
         },
-      }
+      };
     }
   },
   {
@@ -134,29 +138,31 @@ apiRoutes.post(
       url: t.String(),
     }),
   }
-)
+);
 
 // /ajax-logger
 apiRoutes.post(
   "/ajax-logger",
   async ({ body }) => {
     try {
-      console.log("=========================AJAX LOGGER=========================")
-      console.log("Ajax url:", body.url)
+      console.log(
+        "=========================AJAX LOGGER========================="
+      );
+      console.log("Ajax url:", body.url);
 
       if (body.type === "comic") {
-        await decryptImages(body.fid, body.response)
+        await decryptImages(body.fid, body.response);
       }
 
       if (body.type === "movie" && body.url === "/content/parseUrl") {
-        await hlsLogger(body.fid, body.response)
+        await hlsLogger(body.fid, body.response);
       }
 
-      return { success: true }
+      return { success: true };
       // return { success: true, message: "Logged ajax response successfully" }
     } catch (error: any) {
       // console.log(error)
-      return { message: error.message }
+      return { message: error.message };
     }
   },
   {
@@ -169,18 +175,20 @@ apiRoutes.post(
       payload: t.Optional(t.Any()),
     }),
   }
-)
+);
 
 // /key-logger
 apiRoutes.post(
   "/key-logger",
   ({ body }) => {
-    console.log("=========================CRYPTOJS KEY LOGGER=========================")
-    console.log("Crypto ciphertext ->", body.ciphertext)
-    console.log("Crypto key:iv ->", `${body.key}:${body.iv}`)
-    console.log("\n")
+    console.log(
+      "=========================CRYPTOJS KEY LOGGER========================="
+    );
+    console.log("Crypto ciphertext ->", body.ciphertext);
+    console.log("Crypto key:iv ->", `${body.key}:${body.iv}`);
+    console.log("\n");
 
-    return { success: true }
+    return { success: true };
   },
   {
     body: t.Object({
@@ -191,26 +199,28 @@ apiRoutes.post(
       ciphertext: t.String(),
     }),
   }
-)
+);
 
 // /keys-logger
 apiRoutes.post(
   "/keys-logger",
   async ({ body }) => {
     try {
-      console.log("=========================CRYPTOJS KEYS LOGGER=========================")
-      console.log("Crypto keys ->", body.fid, body.keys)
+      console.log(
+        "=========================CRYPTOJS KEYS LOGGER========================="
+      );
+      console.log("Crypto keys ->", body.fid, body.keys);
 
       const keys = Object.keys(body.keys).map((key) => ({
         key: hexToString(key),
         iv: hexToString(body.keys[key]),
-      }))
+      }));
 
-      await decryptHls(body.fid, keys)
+      await decryptHls(body.fid, keys);
 
-      return { success: true, message: "Logged crypto keys successfully" }
+      return { success: true, message: "Logged crypto keys successfully" };
     } catch (error: any) {
-      return { success: false, message: error.message }
+      return { success: false, message: error.message };
     }
   },
   {
@@ -219,32 +229,36 @@ apiRoutes.post(
       keys: t.Object(t.Any()),
     }),
   }
-)
+);
 
+// d1e715a28fc71e5034c24b3869186d05
 // /fttps:webp/:fid
 apiRoutes.get(
   "/fttps:webp/:fid",
   async ({ params }) => {
     try {
-      const fid = params.fid
-      const imageDir = join(STATIC_DIR, "images", fid)
-      const files = await readdir(imageDir)
+      const fid = params.fid;
+      const imageDir = join(STATIC_DIR, "images", fid);
+      const files = await readdir(imageDir);
+
+      if (basename(files[0]).length >= 32) throw new Error();
+
       const images = files
         .filter((file) => file.endsWith(".webp"))
         .sort((a, b) => {
-          let [aPrefix, aSuffix] = a.replace(".webp", "").split("_")
-          let [bPrefix, bSuffix] = b.replace(".webp", "").split("_")
+          let [aPrefix, aSuffix] = a.replace(".webp", "").split("_");
+          let [bPrefix, bSuffix] = b.replace(".webp", "").split("_");
 
           // So sánh theo prefix, nếu giống nhau thì so sánh theo suffix
           if (aPrefix !== bPrefix) {
-            return parseInt(aPrefix, 10) - parseInt(bPrefix, 10)
+            return parseInt(aPrefix, 10) - parseInt(bPrefix, 10);
           } else {
-            return parseInt(aSuffix, 10) - parseInt(bSuffix, 10)
+            return parseInt(aSuffix, 10) - parseInt(bSuffix, 10);
           }
-        })
-      return { images }
+        });
+      return { images, error: false };
     } catch (error) {
-      return { images: [] }
+      return { images: [], error: true };
     }
   },
   {
@@ -253,26 +267,26 @@ apiRoutes.get(
       webp: t.Optional(t.String()),
     }),
   }
-)
+);
 
 // /get-m3u8-available
 apiRoutes.get(
   "/get-m3u8-available",
   async ({ set, query }) => {
     try {
-      const m3u8Path = join(STATIC_DIR, "m3u8", query.fid, "index.m3u8")
-      if (!existsSync(m3u8Path)) throw new Error()
+      const m3u8Path = join(STATIC_DIR, "m3u8", query.fid, "index.m3u8");
+      if (!existsSync(m3u8Path)) throw new Error();
 
-      const file = Bun.file(m3u8Path)
-      const m3u8Content = await file.text()
+      const file = Bun.file(m3u8Path);
+      const m3u8Content = await file.text();
 
-      if (isAvailable(m3u8Content)) throw new Error()
+      if (isAvailable(m3u8Content)) throw new Error();
 
-      return { m3u8: `/public/m3u8/${query.fid}/index.m3u8` }
+      return { m3u8: `/public/m3u8/${query.fid}/index.m3u8` };
     } catch (error) {
-      console.log(error)
-      set.status = 404
-      return { error: { message: "Video is not available" } }
+      console.log(error);
+      set.status = 404;
+      return { error: { message: "Video is not available" } };
     }
   },
   {
@@ -280,8 +294,8 @@ apiRoutes.get(
       fid: t.String(),
     }),
   }
-)
+);
 
-apiRoutes.use(uploadRoutes)
+apiRoutes.use(uploadRoutes);
 
-export default apiRoutes
+export default apiRoutes;
