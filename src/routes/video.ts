@@ -7,7 +7,7 @@ const M3U8_DIR = join(STATIC_DIR, "m3u8");
 const videoRoutes = new Elysia({ prefix: "/videos" });
 
 videoRoutes.get(
-  "/:fid/:name",
+  "/m3u8/:fid/:name",
   async ({ params, set }) => {
     try {
       const { fid, name } = params;
