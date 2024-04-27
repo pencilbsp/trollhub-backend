@@ -282,7 +282,7 @@ apiRoutes.get(
 
       if (isAvailable(m3u8Content)) throw new Error();
 
-      return { m3u8: `/public/m3u8/${query.fid}/index.m3u8` };
+      return { m3u8: `/videos/hls/${query.fid}/index.m3u8` };
     } catch (error) {
       console.log(error);
       set.status = 404;
