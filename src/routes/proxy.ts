@@ -35,7 +35,7 @@ proxyRoutes.get(
     } catch (error) {
       set.status = 404;
       set.headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
-      return "Not Found";
+      return "Image Not Found";
     }
   },
   {

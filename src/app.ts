@@ -3,10 +3,13 @@ import { cors } from "@elysiajs/cors";
 import { html } from "@elysiajs/html";
 import { staticPlugin } from "@elysiajs/static";
 
+import { PORT } from "./configs";
+
 import apiRoutes from "./routes/api";
 import hlsRoutes from "./routes/hls";
 import imageRoutes from "./routes/image";
 import proxyRoutes from "./routes/proxy";
+import videoRoutes from "./routes/video";
 import uploadRoutes from "./routes/upload";
 import webSocket from "./routes/web-socket";
 import segmentRoutes from "./routes/segment";
@@ -20,6 +23,7 @@ new Elysia()
   .use(staticPlugin({ alwaysStatic: false }))
   .use(apiRoutes)
   .use(hlsRoutes)
+  .use(videoRoutes)
   .use(imageRoutes)
   .use(proxyRoutes)
   .use(segmentRoutes)
@@ -29,4 +33,4 @@ new Elysia()
   .get("/", () => {
     return "Hello Fuhu";
   })
-  .listen(3001);
+  .listen(PORT);

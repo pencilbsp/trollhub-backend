@@ -2,28 +2,28 @@ import { join } from "path";
 import Elysia, { t } from "elysia";
 import { STATIC_DIR } from "@/configs";
 
-const IMAGES_DIR = join(STATIC_DIR, "images");
+const M3U8_DIR = join(STATIC_DIR, "m3u8");
 
-const imageRoutes = new Elysia({ prefix: "/images" });
+const videoRoutes = new Elysia({ prefix: "/videos" });
 
-imageRoutes.get(
+videoRoutes.get(
   "/:fid/:name",
   async ({ params, set }) => {
     try {
       const { fid, name } = params;
-      const imagePath = join(IMAGES_DIR, fid, name);
-      const image = Bun.file(imagePath);
+      const filePath = join(M3U8_DIR, fid, name);
+      const file = Bun.file(filePath);
 
-      const exists = await image.exists();
+      const exists = await file.exists();
       if (!exists) throw new Error();
 
       set.headers["Cache-Control"] = "public, max-age=2592000";
 
-      return image;
+      return file;
     } catch (error) {
       set.status = 404;
       set.headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
-      return "Image Not Found";
+      return "Video Not Found";
     }
   },
   {
@@ -31,7 +31,10 @@ imageRoutes.get(
       fid: t.String(),
       name: t.String(),
     }),
+    query: t.Object({
+      t: t.Optional(t.String()),
+    }),
   }
 );
 
-export default imageRoutes;
+export default videoRoutes;
