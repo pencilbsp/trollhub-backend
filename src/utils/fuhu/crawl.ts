@@ -1,5 +1,4 @@
 import { JSDOM } from "jsdom"
-import { TARGET_URL } from "@/configs"
 import { Creator } from "@prisma/client"
 import { extractFuhuFirstContent } from "./dom-extract"
 
@@ -29,7 +28,7 @@ export async function getChannelContents(url: string, channel?: Creator, options
       grid: "true",
     })
 
-    const response = await fetch(`${TARGET_URL}/content/loadChannelContent?${query.toString()}`)
+    const response = await fetch(`${new URL(url).origin}/content/loadChannelContent?${query.toString()}`)
     if (!response.ok) throw new Error(`Failed to fetch with status ${response.statusText}`)
 
     const data = await response.json()

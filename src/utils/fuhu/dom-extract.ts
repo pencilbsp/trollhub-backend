@@ -6,7 +6,7 @@ import { TARGET_URL } from "@/configs"
 const { JSDOM } = jsdom
 
 type Chapter = {
-  fid?: string
+  fid: string
   title?: string
   createdAt: Date
   type: ContentType
@@ -146,7 +146,7 @@ export const extractFuhuContent = async (url: string, type: ContentType, headers
 
   // https://fuhuzz.com/content/subitems?mid=Jmc5FwEM&type=all_json&host=fuhuzz.com
   response = await fetch(
-    BASE_FUHU_URL +
+    new URL(url).origin +
     "/content/subitems?" +
     new URLSearchParams({
       mid: mid,
@@ -160,7 +160,7 @@ export const extractFuhuContent = async (url: string, type: ContentType, headers
 
   const subitems = await response.json()
   const chapters: Chapter[] = subitems.data?.e.map((e: any) => ({
-    fid: e[0],
+    fid: e[0]!,
     title: e[2],
     type: type,
     createdAt: parse(e[4], "dd/MM/yyyy HH:mm", new Date()),
