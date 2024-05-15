@@ -3,7 +3,7 @@ import { cors } from "@elysiajs/cors";
 import { html } from "@elysiajs/html";
 import { staticPlugin } from "@elysiajs/static";
 
-import { PORT } from "./configs";
+import { PORT, UPDATE_VIEW_CRON } from "./configs";
 
 import apiRoutes from "./routes/api";
 import hlsRoutes from "./routes/hls";
@@ -14,6 +14,9 @@ import uploadRoutes from "./routes/upload";
 import webSocket from "./routes/web-socket";
 import segmentRoutes from "./routes/segment";
 import redirectRoute from "./routes/redirect";
+import updateViewCron from "./update-view-cron";
+
+updateViewCron(UPDATE_VIEW_CRON);
 
 console.log("Start server on port: 3001");
 
