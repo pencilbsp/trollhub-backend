@@ -25,9 +25,9 @@ videoRoutes.get(
       const exists = await file.exists();
       if (!exists) throw new Error();
 
-      if (name === "index.m3u8") {
+      if (name.endsWith(".m3u8")) {
         const m3u8Content = await file.text();
-        set.headers["Cache-Control"] = "application/x-mpegURL";
+        set.headers["Content-Type"] = "application/x-mpegURL";
         return m3u8Content.replaceAll(".ts", ".html");
       }
 
