@@ -93,7 +93,10 @@ const hlsRoutes = new Elysia({ prefix: "/hls" })
           await mkdir(videoDir, { recursive: true });
         }
 
+        set.headers["X-FRIP"] = "MISS";
         await Bun.write(filePath, response);
+      } else {
+        set.headers["X-FRIP"] = "HIT";
       }
 
       set.headers["Cache-Control"] = "public, max-age=2592000";
