@@ -22,7 +22,7 @@ setInterval(async () => {
     const chapter = await prisma.chapter.findFirst({
       where: {
         // mobileOnly: false,
-        // type: "movie",
+        type: "movie",
         // type: {
         //   not: ContentType.movie,
         // },
@@ -49,7 +49,7 @@ setInterval(async () => {
     currentId = chapter.id
     processIds.set(currentId, chapter.fid)
 
-    console.log("[+] Bắt đầu tải xuống", currentId, chapter.fid, chapter.type)
+    console.log("[+] Bắt đầu tải xuống", currentId, chapter.fid, chapter.type, chapter.mobileOnly)
 
     const comicUrl = createEmbedUrl(chapter.fid, COMIC_VERSION)
 
@@ -83,7 +83,7 @@ setInterval(async () => {
     }
 
     if (chapter.type === ContentType.movie) {
-      if (chapter.mobileOnly) throw new Error("Mobile only")
+      // if (chapter.mobileOnly) throw new Error("Mobile only")
       const m3u8Content = await extractVideo(chapter.fid)
       const m3u8Path = join(M3U8_DIR, chapter.id + ".m3u8")
       await writeFile(m3u8Path, m3u8Content)
@@ -109,9 +109,9 @@ setInterval(async () => {
 
     processIds.delete(currentId)
     currentId = null
-  } catch (error) {
+  } catch (error: any) {
     if (currentId) {
-      console.log("[x]", currentId, error)
+      console.log("[x]", currentId, error.message)
 
       if (processIds.has(currentId)) {
         const chapterId = processIds.get(currentId)
