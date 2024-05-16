@@ -28,8 +28,8 @@ export default function wsMessageKey(url: string, marker: string): Promise<WsKey
     let timeout: NodeJS.Timeout
     const keys: WsKey[] = []
 
+    // @ts-ignore
     const socket = new WebSocket(url, {
-      // @ts-ignore
       perMessageDeflate: false, // Tắt việc sử dụng perMessageDeflate (nếu có)
       handshakeTimeout: 5000, // Thời gian timeout cho quá trình handshake là 5 giây
       maxRetries: 3, // Số lần thử nghiệm kết nối tối đa là 3
@@ -37,8 +37,7 @@ export default function wsMessageKey(url: string, marker: string): Promise<WsKey
 
     socket.onmessage = (message) => {
       try {
-        const messageString = bufferToString(message.data)
-        console.log(messageString)
+        const messageString = bufferToString(message.data as Buffer)
         const keyString = decrypt(messageString, WEB_SECRET_KEY, WEB_SECRET_IV)
         const [key, iv] = keyString.split("|")
         keys.push({ key, iv })
