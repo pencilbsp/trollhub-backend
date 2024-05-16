@@ -1,7 +1,7 @@
 import { existsSync } from "fs";
 import Elysia, { t } from "elysia";
 import { join, basename } from "path";
-// import { Stream } from "@elysiajs/stream";
+import { Stream } from "@elysiajs/stream";
 import { exists, mkdir } from "fs/promises";
 
 import getRedisClient from "../utils/redis";
@@ -72,14 +72,37 @@ const hlsRoutes = new Elysia({ prefix: "/hls" })
     try {
       const uri = base64Decode(params.slug.replaceAll("-", "/"));
 
-      const { pathname } = new URL(uri);
-      const fileName = basename(pathname);
-      const fid = pathname.split("/")[3].split("-")[1];
+      try {
+        const { pathname } = new URL(uri);
+        const fileName = basename(pathname);
+        const fid = pathname.split("/")[3].split("-")[1];
 
-      const videoDir = join(M3U8_DIR, fid);
-      const filePath = join(videoDir, fileName);
+        const videoDir = join(M3U8_DIR, fid);
+        const filePath = join(videoDir, fileName);
 
-      if (!(await exists(filePath))) {
+        if (!(await exists(filePath))) {
+          const response = await fetch(uri, {
+            headers: {
+              "Accept-Encoding": "identity",
+              Referer: "https://idoitmyself.xyz/",
+            },
+          });
+
+          if (!response.ok || response.status !== 200) throw new Error();
+
+          if (!(await exists(videoDir))) {
+            await mkdir(videoDir, { recursive: true });
+          }
+
+          set.headers["X-FRIP"] = "MISS";
+          await Bun.write(filePath, response);
+        } else {
+          set.headers["X-FRIP"] = "HIT";
+        }
+
+        set.headers["Cache-Control"] = "public, max-age=2592000";
+        return Bun.file(filePath);
+      } catch (error) {
         const response = await fetch(uri, {
           headers: {
             "Accept-Encoding": "identity",
@@ -87,34 +110,10 @@ const hlsRoutes = new Elysia({ prefix: "/hls" })
           },
         });
 
-        if (!response.ok || response.status !== 200) throw new Error();
+        set.headers["Cache-Control"] = "public, max-age=2592000";
 
-        if (!(await exists(videoDir))) {
-          await mkdir(videoDir, { recursive: true });
-        }
-
-        set.headers["X-FRIP"] = "MISS";
-        await Bun.write(filePath, response);
-      } else {
-        set.headers["X-FRIP"] = "HIT";
+        return new Stream(response);
       }
-
-      set.headers["Cache-Control"] = "public, max-age=2592000";
-      return Bun.file(filePath);
-
-      // const response = await fetch(uri, {
-      //   headers: { "Accept-Encoding": "identity" },
-      // });
-
-      // set.headers["Content-Type"] = "video/MP2T";
-
-      // const cacheControl = response.headers.get("Cache-Control");
-      // if (cacheControl) set.headers["Cache-Control"] = cacheControl;
-
-      // const contentLenght = response.headers.get("Content-Lenght");
-      // if (contentLenght) set.headers["Content-Lenght"] = contentLenght;
-
-      // return new Stream(response);
     } catch (error: any) {
       console.log(error);
       set.status = 404;
