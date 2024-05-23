@@ -15,7 +15,9 @@ import {
 } from "./configs";
 
 async function listVideo() {
-  const dirs = await Bun.$`ls -d ${join(STATIC_DIR, "m3u8/*/")}`.quiet().text();
+  const dirs = await Bun.$`ls -dt ${join(STATIC_DIR, "m3u8/*/")}`
+    .quiet()
+    .text();
   return dirs.trim().split("\n");
 }
 
@@ -79,7 +81,7 @@ async function uploadToB2(videoDir: string) {
   if (logFileExist) uploadLog = await logFile.json();
 
   let count = 0;
-  let index = 0;
+  let uploadCount = 0;
   await forEachLimit(segments, 5, async (segment) => {
     let uploaded = null;
     let segmentName = null;
@@ -118,18 +120,15 @@ async function uploadToB2(videoDir: string) {
         deleteAffterUpload: false,
       });
 
+      uploadCount++;
       uploaded = b2File.fileName;
       uploadLog[segmentName || segment.uri] = b2File.fileName;
       await Bun.write(logPath, JSON.stringify(uploadLog));
-
-      count++;
     }
 
-    index++;
+    count++;
     console.log(
-      `[${index}/${segments.length}] ${
-        segmentName || segment.uri
-      }->${uploaded}`
+      `[${count}/${segments.length}] ${segmentName || segment.uri}->${uploaded}`
     );
     m3u8Content = m3u8Content.replace(
       `,\n${segment.uri}\n#`,
@@ -145,10 +144,14 @@ async function uploadToB2(videoDir: string) {
     },
   });
 
-  const newM3u8Path = join(STATIC_DIR, "m3u8", video.id + "_b2.m3u8");
+  const newM3u8Path = join(STATIC_DIR, "m3u8", videoId, video.id + ".m3u8");
   await Bun.write(newM3u8Path, m3u8Content);
 
-  if (count > 0) {
+  const response = await fetch(
+    `https://static.streame.cloud/file/ripcloud/${videoId}/${video.id}.m3u8`
+  );
+
+  if (uploadCount > 0 || response.status !== 200) {
     await b2.uploadFile(newM3u8Path, {
       path: videoId,
       fileName: video.id,
@@ -170,6 +173,8 @@ try {
     videoDirs.shift();
 
     await Bun.sleep(5000);
+
+    console.log(videoDirs.length);
   } while (videoDirs.length);
 } catch (error) {
   console.log(error);

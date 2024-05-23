@@ -1,5 +1,4 @@
 import slug from "slug";
-import { existsSync } from "fs";
 import Elysia, { t } from "elysia";
 import { join, basename } from "path";
 import { readdir } from "fs/promises";
@@ -9,13 +8,18 @@ import { differenceInMinutes } from "date-fns";
 import uploadRoutes from "./upload";
 
 import prisma from "@/utils/prisma";
-import { STATIC_DIR } from "@/configs";
 import { hexToString } from "@/utils/base64";
 import getCountryCode from "@/utils/country-code";
 import upsertContents from "@/utils/upsert-contents";
 import { getChannelContents } from "@/utils/fuhu/crawl";
 import decryptImages from "@/utils/fuhu/decrypt-images";
 import decryptHls, { hlsLogger } from "@/utils/fuhu/decrypt-hls";
+import {
+  STATIC_DIR,
+  STATIC_HOST,
+  FUHURIP_SERVER,
+  B2_BUCKET_NAME,
+} from "@/configs";
 import {
   extractFuhuContent,
   extractFuhuCreator,
@@ -405,15 +409,27 @@ apiRoutes.get(
   "/get-m3u8-available",
   async ({ set, query }) => {
     try {
-      const m3u8Path = join(STATIC_DIR, "m3u8", query.fid, "index.m3u8");
-      if (!existsSync(m3u8Path)) throw new Error();
+      const videoDir = join(STATIC_DIR, "m3u8", query.fid);
+      const result = await Bun.$`ls ${join(videoDir, "*.m3u8")}`.quiet();
+      const m3u8s = result.text().trim().split("\n");
 
-      const file = Bun.file(m3u8Path);
-      const m3u8Content = await file.text();
+      const providers = m3u8s.map((m3u8Path) => {
+        if (m3u8Path.endsWith("index.m3u8")) {
+          return {
+            name: "local",
+            uri: `${FUHURIP_SERVER}/videos/hls/${query.fid}/index.m3u8`,
+          };
+        } else {
+          return {
+            name: "b2",
+            uri: `${STATIC_HOST}/${B2_BUCKET_NAME}/${query.fid}/${basename(
+              m3u8Path
+            )}`,
+          };
+        }
+      });
 
-      if (isAvailable(m3u8Content)) throw new Error();
-
-      return { m3u8: `/videos/hls/${query.fid}/index.m3u8` };
+      return { providers };
     } catch (error) {
       set.status = 404;
       return { error: { message: "Video is not available" } };
