@@ -127,7 +127,7 @@ async function uploadToB2(videoDir: string) {
 
     index++;
     console.log(
-      `[${index}/$${segments.length}] ${
+      `[${index}/${segments.length}] ${
         segmentName || segment.uri
       }->${uploaded}`
     );
