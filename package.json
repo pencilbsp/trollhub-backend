@@ -13,7 +13,7 @@
     "@types/jsdom": "^21.1.4",
     "@types/slug": "^5.0.6",
     "jsdom": "^22.1.0",
-    "prisma": "^5.12.0"
+    "prisma": "^5.14.0"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
@@ -23,7 +23,7 @@
     "@elysiajs/html": "^0.8.0",
     "@elysiajs/static": "^0.8.1",
     "@elysiajs/stream": "^0.8.0",
-    "@prisma/client": "^5.12.0",
+    "@prisma/client": "^5.14.0",
     "bull": "^4.12.3",
     "crypto-js": "^4.1.1",
     "date-fns": "^2.30.0",
