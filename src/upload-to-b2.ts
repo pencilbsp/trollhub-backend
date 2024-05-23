@@ -29,7 +29,7 @@ async function uploadToB2(videoDir: string) {
   const m3u8Exist = await m3u8File.exists();
 
   if (!m3u8Exist) {
-    const chapter = await prisma.chapter.findUnique({ where: { id: videoId } });
+    const chapter = await prisma.chapter.findUnique({ where: { fid: videoId } });
 
     if (!chapter) {
       return console.warn(videoId, "Video không tồn tại.");
