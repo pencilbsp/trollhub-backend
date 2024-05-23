@@ -29,7 +29,9 @@ async function uploadToB2(videoDir: string) {
   const m3u8Exist = await m3u8File.exists();
 
   if (!m3u8Exist) {
-    const chapter = await prisma.chapter.findUnique({ where: { fid: videoId } });
+    const chapter = await prisma.chapter.findUnique({
+      where: { fid: videoId },
+    });
 
     if (!chapter) {
       return console.warn(videoId, "Video không tồn tại.");
@@ -85,11 +87,11 @@ async function uploadToB2(videoDir: string) {
     if (segment.uri.startsWith("https")) {
       segmentName = basename(new URL(segment.uri).pathname);
       uploaded = uploadLog[segmentName];
-    }
-
-    if (/^\d+.ts$/.test(segment.uri)) {
+    } else if (/^\d+.ts$/.test(segment.uri)) {
       uploaded = uploadLog[segment.uri];
       filePath = join(videoDir, segment.uri);
+    } else {
+      uploaded = segment.uri;
     }
 
     if (!uploaded) {
@@ -137,7 +139,7 @@ async function uploadToB2(videoDir: string) {
     },
   });
 
-  const newM3u8Path = join(STATIC_DIR, "m3u8", video.id + ".m3u8");
+  const newM3u8Path = join(STATIC_DIR, "m3u8", video.id + "_b2.m3u8");
   await Bun.write(newM3u8Path, m3u8Content);
 
   if (count > 0) {
@@ -145,6 +147,7 @@ async function uploadToB2(videoDir: string) {
       path: videoId,
       fileName: video.id,
       bucketId: B2_BUCKET_ID,
+      fileExtension: ".m3u8",
       deleteAffterUpload: false,
     });
   }

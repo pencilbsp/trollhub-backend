@@ -172,7 +172,7 @@ export default class B2 {
 
       if (!isBuffer) {
         const f = file(filePath);
-        if (await f.exists()) {
+        if (!(await f.exists())) {
           throw new Error("File does not exist.");
         }
 
