@@ -149,11 +149,11 @@ export default class B2 {
   }
 
   async uploadFile(
-    filePath: string,
+    filePath: string | Buffer,
     options: B2UploadOptions = {},
     tryCount = 0
   ): Promise<B2File> {
-    const {
+    let {
       path,
       fileName,
       contentType,
@@ -170,12 +170,23 @@ export default class B2 {
 
       const upload = await this.getUploadUrl(bucketId);
 
-      // const buf = await readFile(filePath)
-      const f = file(filePath);
-      const arrBuf = await f.arrayBuffer();
-      const buf = Buffer.from(arrBuf);
+      let fileSize = 0;
+      let buf: Buffer | null = null;
+      const isBuffer = Buffer.isBuffer(filePath);
 
-      const oName = basename(filePath);
+      if (!isBuffer) {
+        const f = file(filePath);
+        const arrBuf = await f.arrayBuffer();
+        buf = Buffer.from(arrBuf);
+        fileSize = f.size;
+        contentType = f.type;
+      } else {
+        buf = filePath;
+        fileSize = buf.byteLength;
+      }
+
+      const oName = isBuffer ? "" : basename(filePath);
+
       const name = fileName
         ? `${fileName}${fileExtension || extname(oName)}`
         : fileExtension
@@ -186,8 +197,8 @@ export default class B2 {
         body: buf,
         method: "POST",
         headers: {
-          "Content-Length": f.size.toString(),
-          "Content-Type": contentType || f.type,
+          "Content-Type": contentType!,
+          "Content-Length": fileSize.toString(),
           "X-Bz-Content-Sha1": calculateSha1(buf),
           Authorization: upload.authorizationToken,
           "X-Bz-File-Name": path ? `${path}/${name!}` : name,

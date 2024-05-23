@@ -84,7 +84,6 @@ const hlsRoutes = new Elysia({ prefix: "/hls" })
           const response = await fetch(uri, {
             headers: {
               "Accept-Encoding": "identity",
-              Referer: "https://idoitmyself.xyz/",
             },
           });
 
