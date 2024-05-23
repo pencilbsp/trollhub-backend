@@ -21,13 +21,14 @@ async function getViewKeys(redisClient: RedisClient) {
 }
 
 async function updateContentView(redisClient: RedisClient, key: string) {
-  const id = key.split("_")[1];
+  const id = key.split("_")[2];
+  const type = key.split("_")[1];
 
-  const data = await redisClient.json<View>(key);
+  const count = await redisClient.get(key);
 
-  if (data) {
+  if (count) {
     // @ts-ignore
-    let content = await prisma[data.type].findUnique({
+    let content = await prisma[type].findUnique({
       where: {
         id,
       },
@@ -39,13 +40,13 @@ async function updateContentView(redisClient: RedisClient, key: string) {
 
     if (content) {
       // @ts-ignore
-      content = await prisma[data.type].update({
+      content = await prisma[type].update({
         where: {
           id,
         },
         data: {
           view: {
-            increment: data.view,
+            increment: Number(count),
           },
           updatedAt: content.updatedAt,
         },
