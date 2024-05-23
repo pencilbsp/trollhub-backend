@@ -14,3 +14,8 @@ export const REDIS_NAMESPACE = process.env.REDIS_NAMESPACE || "";
 export const STATIC_DIR = join(process.cwd(), "public");
 
 export const UPDATE_VIEW_CRON = process.env.UPDATE_VIEW_CRON;
+
+export const B2_KEY_ID = process.env.B2_KEY_ID!;
+export const B2_BUCKET_ID = process.env.B2_BUCKET_ID!;
+export const B2_BUCKET_NAME = process.env.B2_BUCKET_NAME!;
+export const B2_APPLICATION_KEY = process.env.B2_APPLICATION_KEY!;
