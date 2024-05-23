@@ -1,5 +1,5 @@
 import { file } from "bun";
-import { existsSync } from "fs";
+// import { existsSync } from "fs";
 import { createHash } from "crypto";
 import { unlink } from "fs/promises";
 import { basename, extname } from "path";
@@ -166,16 +166,16 @@ export default class B2 {
     if (!bucketId) throw new Error("Bucket id is not declared.");
 
     try {
-      if (!existsSync(filePath)) throw new Error("File does not exist.");
-
-      const upload = await this.getUploadUrl(bucketId);
-
       let fileSize = 0;
       let buf: Buffer | null = null;
       const isBuffer = Buffer.isBuffer(filePath);
 
       if (!isBuffer) {
         const f = file(filePath);
+        if (await f.exists()) {
+          throw new Error("File does not exist.");
+        }
+
         const arrBuf = await f.arrayBuffer();
         buf = Buffer.from(arrBuf);
         fileSize = f.size;
@@ -184,6 +184,8 @@ export default class B2 {
         buf = filePath;
         fileSize = buf.byteLength;
       }
+
+      const upload = await this.getUploadUrl(bucketId);
 
       const oName = isBuffer ? "" : basename(filePath);
 
