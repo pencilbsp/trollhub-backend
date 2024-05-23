@@ -16,6 +16,7 @@
     "jsxFragmentFactory": "Html.Fragment",
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
+    "typeRoots": ["./node_modules/@types", "./src/types"],
     "allowJs": true,
     "types": [
       "bun-types" // add Bun global
