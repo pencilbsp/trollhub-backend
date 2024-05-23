@@ -1,5 +1,6 @@
 import { randomUUID } from "crypto";
 import { Parser } from "m3u8-parser";
+import { forEachLimit } from "async";
 import { join, basename } from "path";
 import { ChapterProviders } from "@prisma/client";
 
@@ -55,8 +56,7 @@ async function uploadToB2(videoDir: string) {
   const logFileExist = await logFile.exists();
   if (logFileExist) uploadLog = await logFile.json();
 
-  do {
-    const segment = segments[0];
+  await forEachLimit(segments, 5, async (segment) => {
     if (/^\d+.ts$/.test(segment.uri)) {
       let uploaded = uploadLog[segment.uri];
 
@@ -84,9 +84,7 @@ async function uploadToB2(videoDir: string) {
         `,\n${uploaded}\n#`
       );
     }
-
-    segments.shift();
-  } while (segments.length);
+  });
 
   const video = await prisma.chapter.update({
     where: { fid: videoId },
