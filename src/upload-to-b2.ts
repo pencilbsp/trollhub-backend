@@ -79,6 +79,7 @@ async function uploadToB2(videoDir: string) {
   if (logFileExist) uploadLog = await logFile.json();
 
   let count = 0;
+  let index = 0;
   await forEachLimit(segments, 5, async (segment) => {
     let uploaded = null;
     let segmentName = null;
@@ -124,7 +125,12 @@ async function uploadToB2(videoDir: string) {
       count++;
     }
 
-    console.log(`${segment.uri}->${uploaded}`);
+    index++;
+    console.log(
+      `[${index}/$${segments.length}] ${
+        segmentName || segment.uri
+      }->${uploaded}`
+    );
     m3u8Content = m3u8Content.replace(
       `,\n${segment.uri}\n#`,
       `,\n${uploaded}\n#`
