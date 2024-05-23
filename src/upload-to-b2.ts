@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import { Parser } from "m3u8-parser";
 import { join, basename } from "path";
+import { ChapterProviders } from "@prisma/client";
 
 import B2 from "./utils/b2";
 import prisma from "./utils/prisma";
@@ -89,7 +90,10 @@ async function uploadToB2(videoDir: string) {
 
   const video = await prisma.chapter.update({
     where: { fid: videoId },
-    data: { status: "ready" },
+    data: {
+      status: "ready",
+      providers: [ChapterProviders.local, ChapterProviders.b2],
+    },
   });
 
   const newM3u8Path = join(STATIC_DIR, "m3u8", video.id + ".m3u8");
