@@ -56,6 +56,7 @@ async function uploadToB2(videoDir: string) {
   const logFileExist = await logFile.exists();
   if (logFileExist) uploadLog = await logFile.json();
 
+  let count = 0;
   await forEachLimit(segments, 5, async (segment) => {
     if (/^\d+.ts$/.test(segment.uri)) {
       let uploaded = uploadLog[segment.uri];
@@ -76,6 +77,8 @@ async function uploadToB2(videoDir: string) {
         uploaded = b2File.fileName;
         uploadLog[segment.uri] = b2File.fileName;
         await Bun.write(logPath, JSON.stringify(uploadLog));
+
+        count++;
       }
 
       console.log(`${segment.uri}->${uploaded}`);
@@ -97,12 +100,14 @@ async function uploadToB2(videoDir: string) {
   const newM3u8Path = join(STATIC_DIR, "m3u8", video.id + ".m3u8");
   await Bun.write(newM3u8Path, m3u8Content);
 
-  await b2.uploadFile(newM3u8Path, {
-    path: videoId,
-    fileName: video.id,
-    bucketId: B2_BUCKET_ID,
-    deleteAffterUpload: false,
-  });
+  if (count > 0) {
+    await b2.uploadFile(newM3u8Path, {
+      path: videoId,
+      fileName: video.id,
+      bucketId: B2_BUCKET_ID,
+      deleteAffterUpload: false,
+    });
+  }
 
   console.log(videoId, "Đã tải lên thành công.");
 }
@@ -114,6 +119,7 @@ try {
     await uploadToB2(videoDirs[0]);
 
     videoDirs.shift();
+
     await Bun.sleep(5000);
   } while (videoDirs.length);
 } catch (error) {
