@@ -410,26 +410,30 @@ apiRoutes.get(
   async ({ set, query }) => {
     try {
       const videoDir = join(STATIC_DIR, "m3u8", query.fid);
-      const result = await Bun.$`ls ${join(videoDir, "*.m3u8")}`.quiet();
+      const result = await Bun.$`ls ${videoDir} | egrep '\.m3u8$'`.quiet();
       const m3u8s = result.text().trim().split("\n");
 
       const providers = m3u8s.map((m3u8Path) => {
         if (m3u8Path.endsWith("index.m3u8")) {
           return {
-            name: "local",
-            uri: `${FUHURIP_SERVER}/videos/hls/${query.fid}/index.m3u8`,
+            key: "local",
+            label: "Phần Lan",
+            type: "application/x-mpegurl",
+            src: `${FUHURIP_SERVER}/videos/hls/${query.fid}/index.m3u8`,
           };
         } else {
           return {
-            name: "b2",
-            uri: `${STATIC_HOST}/${B2_BUCKET_NAME}/${query.fid}/${basename(
+            key: "b2",
+            label: "Việt Nam",
+            type: "application/x-mpegurl",
+            src: `${STATIC_HOST}/${B2_BUCKET_NAME}/${query.fid}2/${basename(
               m3u8Path
             )}`,
           };
         }
       });
 
-      return { providers };
+      return { providers, default: "b2" };
     } catch (error) {
       set.status = 404;
       return { error: { message: "Video is not available" } };
