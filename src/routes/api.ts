@@ -1,9 +1,9 @@
 import slug from "slug";
 import Elysia, { t } from "elysia";
-import { join, basename } from "path";
 import { readdir } from "fs/promises";
 import { ContentType } from "@prisma/client";
 import { differenceInMinutes } from "date-fns";
+import { join, basename, extname } from "path";
 
 import uploadRoutes from "./upload";
 
@@ -410,8 +410,11 @@ apiRoutes.get(
   async ({ set, query }) => {
     try {
       const videoDir = join(STATIC_DIR, "m3u8", query.fid);
-      const result = await Bun.$`ls ${videoDir} | egrep '\.m3u8$'`.quiet();
-      const m3u8s = result.text().trim().split("\n");
+      // const result = await Bun.$`ls ${videoDir} | egrep '\.m3u8$'`.quiet();
+      // console.log(query.fid, result);
+      // const m3u8s = result.text().trim().split("\n");
+      const result = await readdir(videoDir);
+      const m3u8s = result.filter((f) => extname(f) === ".m3u8");
 
       const providers = m3u8s.map((m3u8Path) => {
         if (m3u8Path.endsWith("index.m3u8")) {
@@ -426,7 +429,7 @@ apiRoutes.get(
             key: "b2",
             label: "Việt Nam",
             type: "application/x-mpegurl",
-            src: `${STATIC_HOST}/${B2_BUCKET_NAME}/${query.fid}2/${basename(
+            src: `${STATIC_HOST}/${B2_BUCKET_NAME}/${query.fid}/${basename(
               m3u8Path
             )}`,
           };
@@ -435,6 +438,7 @@ apiRoutes.get(
 
       return { providers, default: "b2" };
     } catch (error) {
+      // console.log(error);
       set.status = 404;
       return { error: { message: "Video is not available" } };
     }
