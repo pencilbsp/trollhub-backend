@@ -38,39 +38,44 @@ async function uploadToB2(videoDir: string) {
   const m3u8Exist = await m3u8File.exists();
 
   if (!m3u8Exist) {
-    const localPath = join(STATIC_DIR, "m3u8", chapter.id + ".m3u8");
-    const localFile = Bun.file(localPath);
+    return console.warn(videoId, "Tệp tin m3u8 không tồn tại.");
+    // const localPath = join(STATIC_DIR, "m3u8", chapter.id + ".m3u8");
+    // const localFile = Bun.file(localPath);
 
-    const localExist = await localFile.exists();
+    // const localExist = await localFile.exists();
 
-    if (!localExist) {
-      return console.warn(videoId, "Tệp tin m3u8 không tồn tại.");
-    }
+    // if (!localExist) {
+    //   return console.warn(videoId, "Tệp tin m3u8 không tồn tại.");
+    // }
 
-    m3u8Content = await localFile.text();
+    // m3u8Content = await localFile.text();
   } else {
     m3u8Content = await m3u8File.text();
   }
 
-  const b2 = new B2({
-    keyId: B2_KEY_ID,
-    bucketId: B2_BUCKET_ID,
-    applicationKey: B2_APPLICATION_KEY,
-  });
+  try {
+    const b2 = new B2({
+      keyId: B2_KEY_ID,
+      bucketId: B2_BUCKET_ID,
+      applicationKey: B2_APPLICATION_KEY,
+    });
 
-  await b2.authorize();
+    await b2.authorize();
 
-  await b2Upload(b2, m3u8Content, videoId, chapter.id);
+    await b2Upload(b2, m3u8Content, videoId, chapter.id);
 
-  await prisma.chapter.update({
-    where: { fid: videoId },
-    data: {
-      status: "ready",
-      providers: [ChapterProviders.local, ChapterProviders.b2],
-    },
-  });
+    await prisma.chapter.update({
+      where: { fid: videoId },
+      data: {
+        status: "ready",
+        providers: [ChapterProviders.local, ChapterProviders.b2],
+      },
+    });
 
-  console.log(videoId, "Đã tải lên thành công.");
+    console.log(videoId, "Đã tải lên thành công.");
+  } catch (error: any) {
+    return console.warn(videoId, error.message);
+  }
 }
 
 try {
