@@ -122,5 +122,5 @@ export default async function b2Upload(
     });
   }
 
-  return { m3u8Content, uploadCount };
+  return { m3u8Content, uploadCount, uploadLog };
 }

@@ -115,6 +115,7 @@ setInterval(async () => {
       const m3u8Path = join(videoDir, "index.m3u8");
       await writeFile(m3u8Path, m3u8Content);
 
+      // Upload local M3U8
       await fetch(`${FUHURIP_SERVER}/upload/m3u8`, {
         method: "POST",
         body: JSON.stringify({
@@ -148,12 +149,26 @@ setInterval(async () => {
 
         const result = await b2Upload(b2, m3u8Content, chapter.fid, chapter.id);
 
+        // Upload B2 M3U8
         await fetch(`${FUHURIP_SERVER}/upload/m3u8`, {
           method: "POST",
           body: JSON.stringify({
             fid: chapter.fid,
             content: result.m3u8Content,
             fileName: `${chapter.id}.m3u8`,
+          }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        // Upload log
+        await fetch(`${FUHURIP_SERVER}/upload/m3u8`, {
+          method: "POST",
+          body: JSON.stringify({
+            fid: chapter.fid,
+            fileName: "upload.log",
+            content: JSON.stringify(result.uploadLog),
           }),
           headers: {
             "Content-Type": "application/json",
