@@ -10,7 +10,9 @@ import prisma from "./utils/prisma";
 import {
   B2_KEY_ID,
   STATIC_DIR,
+  STATIC_HOST,
   B2_BUCKET_ID,
+  B2_BUCKET_NAME,
   B2_APPLICATION_KEY,
 } from "./configs";
 
@@ -148,7 +150,7 @@ async function uploadToB2(videoDir: string) {
   await Bun.write(newM3u8Path, m3u8Content);
 
   const response = await fetch(
-    `https://static.streame.cloud/file/ripcloud/${videoId}/${video.id}.m3u8`
+    `${STATIC_HOST}/${B2_BUCKET_NAME}/${videoId}/${video.id}.m3u8`
   );
 
   if (uploadCount > 0 || response.status !== 200) {
