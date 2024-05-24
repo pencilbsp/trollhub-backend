@@ -2,8 +2,13 @@ import { join } from "path";
 import { existsSync, rmSync } from "fs";
 import { writeFile } from "fs/promises";
 
+import {
+  B2_KEY_ID,
+  B2_BUCKET_ID,
+  FUHURIP_SERVER,
+  B2_APPLICATION_KEY,
+} from "./configs";
 import prisma from "./utils/prisma";
-import { FUHURIP_SERVER } from "./configs";
 import extractVideo from "./utils/fuhu/video";
 import { ChapterStatus, ContentType, ChapterProviders } from "@prisma/client";
 import {
@@ -12,6 +17,8 @@ import {
   COMIC_VERSION,
   createEmbedUrl,
 } from "./utils/fuhu/client";
+import B2 from "./utils/b2-sdk";
+import b2Upload from "./utils/b2-upload";
 
 const M3U8_DIR = "public/m3u8";
 const IMAGE_DIR = process.env.IMAGE_DIR || "/";
@@ -43,8 +50,6 @@ setInterval(async () => {
         updatedAt: "desc",
       },
     });
-
-    // console.log(chapter)
 
     if (!chapter) return;
     if (!chapter.fid) return;
@@ -101,10 +106,28 @@ setInterval(async () => {
     if (chapter.type === ContentType.movie) {
       // if (chapter.mobileOnly) throw new Error("Mobile only")
       const m3u8Content = await extractVideo(chapter.fid);
-      const m3u8Path = join(M3U8_DIR, chapter.id + ".m3u8");
+
+      // return console.log(m3u8Content);
+
+      const videoDir = join(M3U8_DIR, chapter.fid);
+      await Bun.$`mkdir -p ${videoDir}`;
+
+      const m3u8Path = join(videoDir, "index.m3u8");
       await writeFile(m3u8Path, m3u8Content);
 
-      await prisma.chapter.update({
+      await fetch(`${FUHURIP_SERVER}/upload/m3u8`, {
+        method: "POST",
+        body: JSON.stringify({
+          fid: chapter.fid,
+          content: m3u8Content,
+          fileName: "index.m3u8",
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const video = await prisma.chapter.update({
         where: {
           id: currentId,
         },
@@ -114,21 +137,47 @@ setInterval(async () => {
         },
       });
 
-      await fetch(`${FUHURIP_SERVER}/upload/m3u8`, {
-        method: "POST",
-        body: JSON.stringify({
-          id: chapter.id,
-          content: m3u8Content,
-        }),
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      if (!video.providers.includes(ChapterProviders.b2)) {
+        const b2 = new B2({
+          keyId: B2_KEY_ID,
+          bucketId: B2_BUCKET_ID,
+          applicationKey: B2_APPLICATION_KEY,
+        });
+
+        await b2.authorize();
+
+        const result = await b2Upload(b2, m3u8Content, chapter.fid, chapter.id);
+
+        await fetch(`${FUHURIP_SERVER}/upload/m3u8`, {
+          method: "POST",
+          body: JSON.stringify({
+            fid: chapter.fid,
+            content: result.m3u8Content,
+            fileName: `${chapter.id}.m3u8`,
+          }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        await prisma.chapter.update({
+          where: {
+            id: currentId,
+          },
+          data: {
+            status: ChapterStatus.ready,
+            providers: {
+              push: ChapterProviders.b2,
+            },
+          },
+        });
+      }
     }
 
     processIds.delete(currentId);
     currentId = null;
   } catch (error: any) {
+    console.log(error);
     if (currentId) {
       console.log("[x]", currentId, error.message);
 
