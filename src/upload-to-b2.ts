@@ -38,17 +38,17 @@ async function uploadToB2(videoDir: string) {
   const m3u8Exist = await m3u8File.exists();
 
   if (!m3u8Exist) {
-    return console.warn(videoId, "Tệp tin m3u8 không tồn tại.");
-    // const localPath = join(STATIC_DIR, "m3u8", chapter.id + ".m3u8");
-    // const localFile = Bun.file(localPath);
+    // return console.warn(videoId, "Tệp tin m3u8 không tồn tại.");
+    const localPath = join(STATIC_DIR, "m3u8", chapter.id + ".m3u8");
+    const localFile = Bun.file(localPath);
 
-    // const localExist = await localFile.exists();
+    const localExist = await localFile.exists();
 
-    // if (!localExist) {
-    //   return console.warn(videoId, "Tệp tin m3u8 không tồn tại.");
-    // }
+    if (!localExist) {
+      return console.warn(videoId, "Tệp tin m3u8 không tồn tại.");
+    }
 
-    // m3u8Content = await localFile.text();
+    m3u8Content = await localFile.text();
   } else {
     m3u8Content = await m3u8File.text();
   }
@@ -89,7 +89,7 @@ try {
     await Bun.sleep(5000);
 
     console.log(videoDirs.length);
-  } while (videoDirs.length);
+  } while (videoDirs.length !== 0);
 } catch (error) {
   console.log(error);
 }
