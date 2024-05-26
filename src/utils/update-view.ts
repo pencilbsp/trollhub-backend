@@ -1,16 +1,14 @@
 import prisma from "./prisma";
 import getRedisClient, { RedisClient } from "./redis";
 
-type View = { type: "content" | "chapter"; view: number };
-
-async function getViewKeys(redisClient: RedisClient) {
+async function getViewKeys(redisClient: RedisClient, match = "view_*") {
   let cursor = 0;
   const keys = [];
 
   do {
     const data = await redisClient.scan(cursor, {
       COUNT: 1000,
-      MATCH: "view_*",
+      MATCH: match,
     });
 
     cursor = data.cursor;
@@ -26,7 +24,7 @@ async function updateContentView(redisClient: RedisClient, key: string) {
 
   const count = await redisClient.get(key);
 
-  if (count) {
+  if (count && id) {
     // @ts-ignore
     let content = await prisma[type].findUnique({
       where: {
@@ -57,12 +55,8 @@ async function updateContentView(redisClient: RedisClient, key: string) {
           updatedAt: true,
         },
       });
-
-      // console.log(content);
     }
   }
-
-  await redisClient.del(key);
 }
 
 export default async function updateView() {
@@ -72,10 +66,29 @@ export default async function updateView() {
   do {
     try {
       await updateContentView(redisClient, keys[0]);
+      await redisClient.del(keys[0]);
     } catch (error) {
-      console.log(error);
+      console.warn(keys[0], error);
     }
 
     keys.shift();
   } while (keys.length !== 0);
+}
+
+export async function getContentMostViews(limit = 10) {
+  const redisClient = await getRedisClient();
+  const keys = await getViewKeys(redisClient, "view_content_*");
+
+  const views: { id: string; view: number }[] = [];
+
+  do {
+    try {
+      const view = await redisClient.get(keys[0]);
+      views.push({ id: keys[0].split("_")[2], view: Number(view) });
+    } catch (error) {}
+
+    keys.shift();
+  } while (keys.length !== 0);
+
+  return views.sort((a, b) => b.view - a.view).slice(0, 10);
 }

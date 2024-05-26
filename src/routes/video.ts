@@ -1,6 +1,7 @@
 import Elysia, { t } from "elysia";
 import { join, extname } from "path";
-import { STATIC_DIR } from "@/configs";
+
+import { STATIC_DIR, VALID_SEGMENT } from "@/configs";
 
 const M3U8_DIR = join(STATIC_DIR, "m3u8");
 
@@ -23,12 +24,26 @@ videoRoutes.get(
       const file = Bun.file(filePath);
 
       const exists = await file.exists();
-      if (!exists) throw new Error();
+      if (!exists) throw new Error("File not found.");
 
       if (name.endsWith(".m3u8")) {
-        const m3u8Content = await file.text();
+        let m3u8Content = await file.text();
+
+        if (VALID_SEGMENT.test(m3u8Content)) {
+          const segments = m3u8Content
+            .match(new RegExp(VALID_SEGMENT, "g"))
+            ?.map((segment) => segment.match(VALID_SEGMENT)![1]);
+
+          segments?.forEach((uri) => {
+            const slug = btoa(uri).replaceAll("/", "-");
+            m3u8Content = m3u8Content.replace(uri, `/hls/segment/${slug}`);
+          });
+        } else {
+          m3u8Content = m3u8Content.replaceAll(".ts", ".html");
+        }
+
         set.headers["Content-Type"] = "application/x-mpegURL";
-        return m3u8Content.replaceAll(".ts", ".html");
+        return m3u8Content;
       }
 
       set.headers["Cache-Control"] = "public, max-age=2592000";
@@ -38,10 +53,10 @@ videoRoutes.get(
       }
 
       return file;
-    } catch (error) {
+    } catch (error: any) {
       set.status = 404;
       set.headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
-      return "Video Not Found";
+      return error.message;
     }
   },
   {

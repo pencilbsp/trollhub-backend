@@ -20,3 +20,5 @@ export const B2_KEY_ID = process.env.B2_KEY_ID!;
 export const B2_BUCKET_ID = process.env.B2_BUCKET_ID!;
 export const B2_BUCKET_NAME = process.env.B2_BUCKET_NAME!;
 export const B2_APPLICATION_KEY = process.env.B2_APPLICATION_KEY!;
+
+export const VALID_SEGMENT = /#EXTINF:[\d.]+,\n(https.*?)\n/;

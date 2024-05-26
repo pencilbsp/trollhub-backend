@@ -4,13 +4,11 @@ import { join, basename } from "path";
 import { Stream } from "@elysiajs/stream";
 import { exists, mkdir } from "fs/promises";
 
+import { VALID_SEGMENT } from "@/configs";
 import getRedisClient from "../utils/redis";
 
 const MAX_AGE = 7 * 24 * 60 * 60; // 7 days
-const VALID_SEGMENT = /#EXTINF:[\d.]+,\n(http.*?)\n/;
 const M3U8_DIR = join(process.cwd(), "public", "m3u8");
-const base64Encode = (data: string) => Buffer.from(data).toString("base64");
-const base64Decode = (data: string) => Buffer.from(data, "base64").toString();
 
 const hlsRoutes = new Elysia({ prefix: "/hls" })
   .post(
@@ -54,23 +52,22 @@ const hlsRoutes = new Elysia({ prefix: "/hls" })
         ?.map((segment) => segment.match(VALID_SEGMENT)![1]);
 
       segments?.forEach((uri) => {
-        const slug = base64Encode(uri).replaceAll("/", "-");
+        const slug = btoa(uri).replaceAll("/", "-");
         m3u8Content = m3u8Content.replace(uri, `/hls/segment/${slug}`);
       });
 
-      // set.headers["Content-Type"] = "application/x-mpegURL"
-      set.headers["Content-Type"] = "application/vnd.apple.mpegurl";
+      set.headers["Content-Type"] = "application/x-mpegURL";
       set.headers["Cache-Control"] = `public, max-age=${MAX_AGE}`;
       return m3u8Content;
     } catch (error: any) {
-      console.log(error);
+      // console.log(error);
       set.status = 404;
       return error.message;
     }
   })
   .get("/segment/:slug", async ({ params, set }) => {
     try {
-      const uri = base64Decode(params.slug.replaceAll("-", "/"));
+      const uri = atob(params.slug.replaceAll("-", "/"));
 
       try {
         const { pathname } = new URL(uri);
@@ -105,7 +102,6 @@ const hlsRoutes = new Elysia({ prefix: "/hls" })
         const response = await fetch(uri, {
           headers: {
             "Accept-Encoding": "identity",
-            Referer: "https://idoitmyself.xyz/",
           },
         });
 
@@ -114,7 +110,7 @@ const hlsRoutes = new Elysia({ prefix: "/hls" })
         return new Stream(response);
       }
     } catch (error: any) {
-      console.log(error);
+      // console.log(error);
       set.status = 404;
       return error.message;
     }
