@@ -410,17 +410,14 @@ apiRoutes.get(
   async ({ set, query }) => {
     try {
       const videoDir = join(STATIC_DIR, "m3u8", query.fid);
-      // const result = await Bun.$`ls ${videoDir} | egrep '\.m3u8$'`.quiet();
-      // console.log(query.fid, result);
-      // const m3u8s = result.text().trim().split("\n");
       const result = await readdir(videoDir);
       const m3u8s = result.filter((f) => extname(f) === ".m3u8");
 
       const providers: any[] = [];
 
-      for (const m3u8Path of m3u8s) {
-        if (m3u8Path.endsWith("index.m3u8")) {
-          const m3u8File = Bun.file(m3u8Path);
+      for (const m3u8Name of m3u8s) {
+        if (m3u8Name === "index.m3u8") {
+          const m3u8File = Bun.file(join(videoDir, m3u8Name));
           const m3u8Content = await m3u8File.text();
 
           if (!isAvailable(m3u8Content)) {
@@ -436,9 +433,7 @@ apiRoutes.get(
             key: "b2",
             label: "Việt Nam",
             type: "application/x-mpegurl",
-            src: `${STATIC_HOST}/${B2_BUCKET_NAME}/${query.fid}/${basename(
-              m3u8Path
-            )}`,
+            src: `${STATIC_HOST}/${B2_BUCKET_NAME}/${query.fid}/${m3u8Name}`,
           });
         }
       }
