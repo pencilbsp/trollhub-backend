@@ -6,8 +6,8 @@ import { randomUUID } from "crypto";
 import { join, dirname } from "path";
 
 import { STATIC_DIR } from "@/configs";
-import { decode } from "@/utils/base64";
 import myEmitter from "@/utils/emiter";
+import { decode } from "@/utils/base64";
 import { decrypt } from "@/utils/fuhu/client";
 import decryptImages from "@/utils/fuhu/decrypt-images";
 
@@ -55,7 +55,7 @@ const sourceLogger = async (url: string, source: string) => {
 };
 
 const webSocket = new Elysia().ws("/ws", {
-  async message(_, message: any) {
+  async message(ws, message: any) {
     try {
       if (Buffer.isBuffer(message)) {
         const payloadLengthArray = new Uint8Array(message.slice(0, 4));
@@ -73,16 +73,21 @@ const webSocket = new Elysia().ws("/ws", {
           const metadata = await image.metadata();
 
           if (metadata.width === 300 && metadata.height === 300) {
-            console.log("Skip QR code image");
+            // console.log("Skip QR code image");
+            ws.send({ status: "skiped" });
           } else if (metadata.width === 450 && metadata.height === 450) {
-            console.log("Skip QR code image");
+            // console.log("Skip QR code image");
+            ws.send({ status: "skiped" });
           } else {
-            console.log(payload.url);
+            // console.log(payload.url);
             const imagePath = join(STATIC_DIR, "images", payload.url);
-            if (!existsSync(dirname(imagePath)))
+
+            if (!existsSync(dirname(imagePath))) {
               await $`mkdir -p ${dirname(imagePath)}`;
+            }
 
             await image.toFile(imagePath);
+            ws.send({ status: "saved" });
           }
 
           image.destroy();

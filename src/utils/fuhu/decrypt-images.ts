@@ -2,7 +2,6 @@ import { $ } from "bun"
 import { join } from "path"
 import { existsSync } from "fs"
 
-import prisma from "@/utils/prisma"
 import { STATIC_DIR } from "@/configs"
 import { decrypt, filterStringsStartingWithSamePrefix, reversImageUrl } from "./client"
 
