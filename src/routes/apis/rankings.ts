@@ -7,7 +7,7 @@ export default new Elysia({ prefix: "/rankings" }).get(
   "/",
   async function name({ query, set }) {
     try {
-      const keys = await getContentMostViews(query.type, query.limit);
+      const keys = await getContentMostViews(query.type, query.start, query.end);
       // @ts-ignore
       const result = await prisma[query.type].findMany({
         where: {
@@ -54,7 +54,8 @@ export default new Elysia({ prefix: "/rankings" }).get(
   },
   {
     query: t.Object({
-      limit: t.Optional(t.Numeric()),
+      end: t.Numeric(),
+      start: t.Numeric(),
       type: t.Union([t.Literal("content"), t.Literal("chapter")]),
     }),
   }
