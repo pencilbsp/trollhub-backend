@@ -75,11 +75,7 @@ export default async function updateView() {
   } while (keys.length !== 0);
 }
 
-export async function getContentMostViews(
-  type: "content" | "chapter",
-  start: number,
-  end: number
-) {
+export async function getContentMostViews(type: "content" | "chapter") {
   const redisClient = await getRedisClient();
   const keys = await getViewKeys(redisClient, `view_${type}_*`);
 
@@ -94,5 +90,5 @@ export async function getContentMostViews(
     keys.shift();
   } while (keys.length !== 0);
 
-  return views.sort((a, b) => b.view - a.view).slice(start, end);
+  return views.sort((a, b) => b.view - a.view);
 }
