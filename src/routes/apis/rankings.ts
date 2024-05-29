@@ -47,7 +47,7 @@ export default new Elysia({ prefix: "/rankings" }).get(
         data: resultKeys.map((key) => {
           return {
             ...key,
-            ...resultKeys.find(({ id }) => id === key.id),
+            ...contents.find(({ id }: any) => id === key.id),
           };
         }),
         total: keys.length,
