@@ -10,7 +10,7 @@ export default new Elysia({ prefix: "/rankings" }).get(
       const keys = await getContentMostViews(query.type);
       const resultKeys = keys.slice(query.start, query.end);
       // @ts-ignore
-      const result = await prisma[query.type].findMany({
+      const contents = await prisma[query.type].findMany({
         where: {
           id: {
             in: resultKeys.map(({ id }) => id),
@@ -44,10 +44,10 @@ export default new Elysia({ prefix: "/rankings" }).get(
       });
 
       return {
-        data: result.map((content: any) => {
+        data: resultKeys.map((key) => {
           return {
-            ...content,
-            view: resultKeys.find(({ id }) => id === content.id)?.view,
+            ...key,
+            ...resultKeys.find(({ id }) => id === key.id),
           };
         }),
         total: keys.length,
