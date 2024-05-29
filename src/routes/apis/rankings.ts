@@ -22,6 +22,7 @@ export default new Elysia({ prefix: "/rankings" }).get(
                 fid: true,
                 type: true,
                 title: true,
+                akaTitle: true,
                 thumbUrl: true,
                 updatedAt: true,
                 creator: {
@@ -41,7 +42,11 @@ export default new Elysia({ prefix: "/rankings" }).get(
               },
       });
 
-      return { data: result };
+      return {
+        data: result.map((content: any, index: number) => {
+          return { ...content, ...keys[index] };
+        }),
+      };
     } catch (error) {
       set.status = 500;
       return { error: { message: "Đã có lỗi xảy ra, vui lòng thử lại sau." } };
