@@ -96,9 +96,9 @@ export default async function b2Upload(
     }
 
     count++;
-    console.log(
-      `[${count}/${segments.length}] ${segmentName || segment.uri}->${uploaded}`
-    );
+    // console.log(
+    //   `[${count}/${segments.length}] ${segmentName || segment.uri}->${uploaded}`
+    // );
     m3u8Content = m3u8Content.replace(
       `,\n${segment.uri}\n#`,
       `,\n${uploaded}\n#`
