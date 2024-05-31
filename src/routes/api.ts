@@ -6,6 +6,7 @@ import seekable from "./apis/seekable";
 import rankings from "./apis/rankings";
 import fttpsWebp from "./apis/fttps-webp";
 import ajaxLogger from "./apis/ajax-logger";
+import submitUpload from "./apis/submit-upload";
 import requestContent from "./apis/request-content";
 import getM3u8Available from "./apis/get-m3u8-available";
 import { keyLogger, keysLogger } from "./apis/keys-logger";
@@ -37,5 +38,7 @@ apiRoutes.use(getM3u8Available);
 apiRoutes.use(rankings);
 
 apiRoutes.use(uploadRoutes);
+
+apiRoutes.use(submitUpload);
 
 export default apiRoutes;

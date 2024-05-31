@@ -68,26 +68,29 @@ const webSocket = new Elysia().ws("/ws", {
         const payload = JSON.parse(new TextDecoder().decode(playloadArray));
         const blobData = message.slice(4 + payloadLength);
 
-        if (payload.type === "image") {
+        if (payload.type === "images") {
           const image = sharp(blobData);
           const metadata = await image.metadata();
 
           if (metadata.width === 300 && metadata.height === 300) {
             // console.log("Skip QR code image");
-            ws.send({ status: "skiped" });
+            ws.send({ type: payload.type, status: "ok", fileName: "qr.code" });
           } else if (metadata.width === 450 && metadata.height === 450) {
             // console.log("Skip QR code image");
-            ws.send({ status: "skiped" });
+            ws.send({ type: payload.type, status: "ok", fileName: "qr.code" });
           } else {
-            // console.log(payload.url);
-            const imagePath = join(STATIC_DIR, "images", payload.url);
+            const imageDir = join(STATIC_DIR, payload.type, payload.fid);
+            const imagePath = join(imageDir, payload.url);
 
-            if (!existsSync(dirname(imagePath))) {
-              await $`mkdir -p ${dirname(imagePath)}`;
-            }
+            await $`mkdir -p ${imageDir}`;
 
             await image.toFile(imagePath);
-            ws.send({ status: "saved" });
+
+            ws.send({
+              status: "ok",
+              type: payload.type,
+              fileName: payload.url,
+            });
           }
 
           image.destroy();
