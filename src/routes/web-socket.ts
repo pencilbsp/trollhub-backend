@@ -1,12 +1,11 @@
 import sharp from "sharp";
+import { join } from "path";
 import { $, file } from "bun";
 import { existsSync } from "fs";
 import { Elysia } from "elysia";
 import { randomUUID } from "crypto";
-import { join, dirname } from "path";
 
 import { STATIC_DIR } from "@/configs";
-import myEmitter from "@/utils/emiter";
 import { decode } from "@/utils/base64";
 import { decrypt } from "@/utils/fuhu/client";
 import decryptImages from "@/utils/fuhu/decrypt-images";
@@ -94,10 +93,6 @@ const webSocket = new Elysia().ws("/ws", {
           }
 
           image.destroy();
-        }
-
-        if (payload.type === "segment") {
-          myEmitter.emit(payload.url, blobData);
         }
       } else {
         const { action, payload } = message;

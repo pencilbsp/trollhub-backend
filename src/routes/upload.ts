@@ -1,14 +1,42 @@
-import { file } from "bun";
 import Elysia, { t } from "elysia";
 import { join, basename } from "path";
+import { file, CryptoHasher } from "bun";
+
 import { STATIC_DIR } from "@/configs";
 
 const uploadRoutes = new Elysia({ prefix: "/upload" });
 
-async function saveSegment(segmentPath: string, data?: File) {
-  if (data) {
+async function saveSegment(segmentPath: string, data: File, tryCount = 1) {
+  try {
+    const hasher = new CryptoHasher("md5");
+    const reader = data.stream().getReader();
+
+    while (true) {
+      const { done, value } = await reader.read();
+
+      if (value) {
+        hasher.update(value);
+      }
+
+      if (done) {
+        break;
+      }
+    }
+
     await Bun.write(segmentPath, data);
-    return basename(segmentPath);
+
+    return {
+      fileName: basename(segmentPath),
+      md5Checksum: hasher.digest("hex"),
+    };
+  } catch (error) {
+    tryCount++;
+
+    if (tryCount <= 3) {
+      return saveSegment(segmentPath, data, tryCount);
+    }
+
+    throw error;
   }
 }
 
@@ -16,6 +44,7 @@ uploadRoutes.post(
   "/segment",
   async ({ query, body }) => {
     try {
+      console.log(body.segmentUrl, "->", body.redirectUrl);
       const videoDir = join(STATIC_DIR, "m3u8", query.fid);
       const m3u8Path = join(videoDir, "index.m3u8");
 
@@ -28,21 +57,23 @@ uploadRoutes.post(
       const currentUrl = segment.split("\n")[1].trim();
 
       const segmentPath = join(videoDir, body.fragIndex + ".ts");
-      const segmentFile = await saveSegment(segmentPath, body.segment);
 
-      await Bun.write(
-        m3u8Path,
-        m3u8Content.replace(currentUrl, segmentFile || body.redirectUrl)
-      );
+      let newUri = body.redirectUrl;
 
-      // const segmentIndex = m3u8Content.indexOf(body.segmentUrl)
+      if (body.segment) {
+        try {
+          const segmentFile = await saveSegment(segmentPath, body.segment);
+          newUri = segmentFile.fileName;
+        } catch (error) {
+          console.log(error);
+        }
+      }
 
-      // if (segmentIndex > -1) {
-      //   const segmentPath = join(videoDir, segmentIndex + ".ts")
-      //   const segmentFile = await saveSegment(segmentPath, body.segment)
-      //   await Bun.write(m3u8Path, m3u8Content.replace(body.segmentUrl, segmentFile || body.redirectUrl))
-      // }
+      await Bun.write(m3u8Path, m3u8Content.replace(currentUrl, newUri));
+
+      return { success: true };
     } catch (error: any) {
+      console.log(error);
       return {
         error: {
           message: error.message,
