@@ -115,19 +115,24 @@ const webSocket = new Elysia().ws("/ws", {
          */
         if (action === "hls_key") {
           const m3u8Path = join(STATIC_DIR, "m3u8", payload.fid, "index.m3u8");
-          const f = file(m3u8Path);
-          const m3u8Content = await f.text();
+          const m3u8File = file(m3u8Path);
+          const m3u8Content = await m3u8File.text();
 
-          const base64Key = Buffer.from(payload.keyHex, "hex").toString(
-            "base64"
+          const base64Key = Buffer.from(payload.keyHex, "hex");
+
+          const keyUrl = m3u8Content.match(
+            /#EXT-X-KEY:METHOD=AES-128,URI="(.*?)",IV=/
           );
-          await Bun.write(
-            m3u8Path,
-            m3u8Content.replaceAll(
-              payload.keyUrl,
-              `data:text/plain;base64,${base64Key}`
-            )
-          );
+
+          if (keyUrl && keyUrl[1]) {
+            await Bun.write(
+              m3u8Path,
+              m3u8Content.replaceAll(
+                keyUrl[1],
+                `data:text/plain;base64,${base64Key.toString("base64")}`
+              )
+            );
+          }
         }
 
         if (action === "log_source") {

@@ -22,25 +22,34 @@ export default new Elysia({ prefix: "/seekable" }).get(
       const segments = m3u8Content.match(/#EXTINF:\d+(?:.\d+|),\n.*?$/gm);
       if (!segments) throw new Error("Không thể phân tích tệp tin m3u8");
 
-      let to = 0;
+      let time = 0;
       let index = 0;
+      const tos = [];
+      let latest = false;
       while (true) {
         const segment = segments[index];
         if (!segment) break;
 
-        const time = segment.match(/#EXTINF:(\d+(?:.\d+|)),\n/)![1];
-        to += parseFloat(time);
-        index++;
+        const segmentTime = segment.match(/#EXTINF:(\d+(?:.\d+|)),\n/)![1];
+        time += parseFloat(segmentTime);
 
         if (isAvailable(segment)) {
-          break;
+          if (!latest) {
+            tos.push(time - 10);
+          }
+
+          latest = true;
+        } else {
+          latest = false;
         }
+
+        index++;
       }
 
-      return { to: Math.floor(to) - 10 };
+      return { tos };
     } catch (error: any) {
       return {
-        to: 0,
+        tos: [],
         error: {
           message: error.message,
         },

@@ -14,21 +14,22 @@
     "@types/jsdom": "^21.1.4",
     "@types/slug": "^5.0.6",
     "jsdom": "^22.1.0",
-    "prisma": "^5.14.0"
+    "prisma": "^5.15.0"
   },
   "peerDependencies": {
-    "typescript": "^5.0.0"
+    "typescript": "^5.4.5"
   },
   "dependencies": {
     "@elysiajs/cors": "^0.8.0",
     "@elysiajs/html": "^0.8.0",
     "@elysiajs/static": "^0.8.1",
     "@elysiajs/stream": "^0.8.0",
-    "@prisma/client": "^5.14.0",
+    "@prisma/client": "5.15.0",
     "async": "^3.2.5",
     "bull": "^4.12.3",
     "crypto-js": "^4.1.1",
     "date-fns": "^2.30.0",
+    "diff": "^5.2.0",
     "elysia": "^1.0.22",
     "m3u8-parser": "^7.1.0",
     "redis": "^4.6.12",

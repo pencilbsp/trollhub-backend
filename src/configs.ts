@@ -22,3 +22,7 @@ export const B2_BUCKET_NAME = process.env.B2_BUCKET_NAME!;
 export const B2_APPLICATION_KEY = process.env.B2_APPLICATION_KEY!;
 
 export const VALID_SEGMENT = /#EXTINF:[\d.]+,\n(https.*?)\n/;
+
+export const CF_HOST = process.env.CF_HOST!;
+
+export const CHROME_PATH = process.env.CHROME_PATH!;
